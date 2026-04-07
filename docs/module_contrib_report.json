@@ -1,0 +1,190 @@
+{
+  "methodology": {
+    "principles": [
+      "所有模块都采用同一批“公开 support ticket 语料中文化改写 + 本地业务侧表”样本进行对比。",
+      "每次对比只改变一个模块，其余 workflow、规则和数据保持不变。",
+      "对于基线为 0 的指标，只报告绝对提升，不虚构相对百分比。"
+    ],
+    "rag": "在相同 TicketFlow 主流程上，对比 hybrid RAG 与 keyword-only baseline 的证据命中率。",
+    "mcp": "在相同 TicketFlow 主流程上，对比关闭外部协同与启用本地 SMTP sink 的外部通知成功率和非阻塞恢复率。",
+    "lora": "在相同 MiniMind base 模型、相同 held-out 集、相同评分脚本上，对比微调前后的离线任务得分；同时在 TicketFlow 中验证 reply 节点是否真正切到本地微调模型。"
+  },
+  "agent_workflow": {
+    "classification_accuracy": 0.917,
+    "category_macro_f1": 0.92,
+    "sla_risk_recall": 1.0,
+    "action_type_accuracy": 0.833,
+    "approval_required_recall": 1.0,
+    "target_status_accuracy": 0.833,
+    "escalation_f1": 0.8,
+    "approval_interception_rate": 1.0,
+    "first_reply_usable_rate": 1.0,
+    "groundedness_rate": 0.75,
+    "policy_violation_rate": 0.0,
+    "hallucination_rate": 0.0,
+    "reply_rubric_proxy_mean": 4.5,
+    "unsupported_sensitive_action_rate": 0.0
+  },
+  "rag": {
+    "policy_hit_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "history_hit_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "kb_hit_rate": {
+      "before": 1.0,
+      "after": 1.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": 0.0
+    },
+    "vector_retrieval_usage_rate": 1.0,
+    "citation_grounding_rate": 1.0
+  },
+  "mcp": {
+    "incident_delivery_success_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "kb_candidate_success_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "external_nonblocking_recovery_rate": {
+      "before": 1.0,
+      "after": 1.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": 0.0
+    },
+    "enabled_trigger_rates": {
+      "incident_email_trigger_rate": 0.25,
+      "kb_candidate_trigger_rate": 0.583
+    },
+    "enabled_avg_latency_ms": 1913.1
+  },
+  "lora_offline": {
+    "sample_size": 72,
+    "overall_score": {
+      "before": 0.037,
+      "after": 0.541,
+      "absolute_delta": 0.504,
+      "relative_gain_pct": 1362.2
+    },
+    "strict_json_valid_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "recoverable_json_rate": {
+      "before": 0.75,
+      "after": 1.0,
+      "absolute_delta": 0.25,
+      "relative_gain_pct": 33.3
+    },
+    "parse_mode_breakdown": {
+      "base": {
+        "direct_or_code_fence": 27,
+        "substring_object": 3
+      },
+      "tuned": {
+        "direct_or_code_fence": 40
+      }
+    },
+    "bad_case_reason_breakdown": {
+      "base": {
+        "score_below_1": 62,
+        "invalid_json_unrecoverable": 10
+      },
+      "tuned": {
+        "score_below_1": 60
+      }
+    },
+    "tasks": {
+      "classification": {
+        "before": 0.0,
+        "after": 0.76,
+        "absolute_delta": 0.76,
+        "relative_gain_pct": null
+      },
+      "decision": {
+        "before": 0.0,
+        "after": 0.562,
+        "absolute_delta": 0.562,
+        "relative_gain_pct": null
+      },
+      "internal_note": {
+        "before": 0.0,
+        "after": 0.417,
+        "absolute_delta": 0.417,
+        "relative_gain_pct": null
+      },
+      "reply": {
+        "before": 0.133,
+        "after": 0.333,
+        "absolute_delta": 0.2,
+        "relative_gain_pct": 150.4
+      }
+    }
+  },
+  "lora_in_ticketflow": {
+    "reply_minimind_coverage_rate": {
+      "before": 0.0,
+      "after": 1.0,
+      "absolute_delta": 1.0,
+      "relative_gain_pct": null
+    },
+    "first_reply_usable_rate": {
+      "before": 1.0,
+      "after": 1.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": 0.0
+    },
+    "groundedness_rate": {
+      "before": 0.75,
+      "after": 0.5,
+      "absolute_delta": -0.25,
+      "relative_gain_pct": -33.3
+    },
+    "policy_violation_rate": {
+      "before": 0.0,
+      "after": 0.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": null
+    },
+    "hallucination_rate": {
+      "before": 0.0,
+      "after": 0.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": null
+    },
+    "reply_rubric_proxy_mean": {
+      "before": 4.5,
+      "after": 4.0,
+      "absolute_delta": -0.5,
+      "relative_gain_pct": -11.1
+    },
+    "fallback_case_rate": {
+      "before": 0.0,
+      "after": 0.0,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": null
+    },
+    "classification_accuracy": {
+      "before": 0.917,
+      "after": 0.917,
+      "absolute_delta": 0.0,
+      "relative_gain_pct": 0.0
+    }
+  }
+}

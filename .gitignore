@@ -1,0 +1,12 @@
+.pytest_cache/
+.streamlit/
+__pycache__/
+data/generated/
+*.sqlite3
+*.db
+.pytest_tmp/
+.env
+*.log
+*.out
+*.err
+*.tmp

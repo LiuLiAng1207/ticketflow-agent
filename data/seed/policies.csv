@@ -1,0 +1,25 @@
+policy_id,title,body,action_type,approval_required,priority_hint
+POL-001-01,退款必须主管审批,所有退款动作在执行前都必须进入人工审批。,refund,true,low
+POL-002-02,缺少订单号不能退款,未核验订单号前，客服只能要求客户补充信息，不能承诺退款。,refund,false,medium
+POL-003-03,企业 Sev1 故障必须升级,企业客户的 Sev1 生产故障必须由主管确认后升级给专家团队。,escalation,true,high
+POL-004-04,禁止静默关单,未与客户沟通前，工单不能直接静默关闭。,close_ticket_without_contact,true,urgent
+POL-005-05,SLA 特批需审批,任何 SLA 例外都必须经过主管批准。,sla_override,true,low
+POL-006-06,物流长期延迟应升级,发货或运输状态停滞超过五天时，应创建物流升级单。,escalation,false,medium
+POL-001-07,退款必须主管审批,所有退款动作在执行前都必须进入人工审批。,refund,true,high
+POL-002-08,缺少订单号不能退款,未核验订单号前，客服只能要求客户补充信息，不能承诺退款。,refund,false,urgent
+POL-003-09,企业 Sev1 故障必须升级,企业客户的 Sev1 生产故障必须由主管确认后升级给专家团队。,escalation,true,low
+POL-004-10,禁止静默关单,未与客户沟通前，工单不能直接静默关闭。,close_ticket_without_contact,true,medium
+POL-005-11,SLA 特批需审批,任何 SLA 例外都必须经过主管批准。,sla_override,true,high
+POL-006-12,物流长期延迟应升级,发货或运输状态停滞超过五天时，应创建物流升级单。,escalation,false,urgent
+POL-001-13,退款必须主管审批,所有退款动作在执行前都必须进入人工审批。,refund,true,low
+POL-002-14,缺少订单号不能退款,未核验订单号前，客服只能要求客户补充信息，不能承诺退款。,refund,false,medium
+POL-003-15,企业 Sev1 故障必须升级,企业客户的 Sev1 生产故障必须由主管确认后升级给专家团队。,escalation,true,high
+POL-004-16,禁止静默关单,未与客户沟通前，工单不能直接静默关闭。,close_ticket_without_contact,true,urgent
+POL-005-17,SLA 特批需审批,任何 SLA 例外都必须经过主管批准。,sla_override,true,low
+POL-006-18,物流长期延迟应升级,发货或运输状态停滞超过五天时，应创建物流升级单。,escalation,false,medium
+POL-001-19,退款必须主管审批,所有退款动作在执行前都必须进入人工审批。,refund,true,high
+POL-002-20,缺少订单号不能退款,未核验订单号前，客服只能要求客户补充信息，不能承诺退款。,refund,false,urgent
+POL-003-21,企业 Sev1 故障必须升级,企业客户的 Sev1 生产故障必须由主管确认后升级给专家团队。,escalation,true,low
+POL-004-22,禁止静默关单,未与客户沟通前，工单不能直接静默关闭。,close_ticket_without_contact,true,medium
+POL-005-23,SLA 特批需审批,任何 SLA 例外都必须经过主管批准。,sla_override,true,high
+POL-006-24,物流长期延迟应升级,发货或运输状态停滞超过五天时，应创建物流升级单。,escalation,false,urgent
