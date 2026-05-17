@@ -14,3 +14,5 @@
 - Added repository protocol, PostgreSQL repository skeleton, and `ticketflow-migrate` migration runner.
 - Added Streamlit sidebar visibility for recent workflow tasks, pending approvals, and outbox events.
 - Verification passed after Phase 2 control-plane work: `94 passed`, `docker compose config ok`, `ticketflow-migrate --backend sqlite` ok.
+- Added real production loop wiring: async workflow tasks now enter `waiting_approval` on LangGraph interrupt, approval decisions resume the workflow through API, and outbox events can be delivered idempotently by worker code.
+- Updated README to describe the current API / Worker / Durable HITL / Outbox behavior in production-platform terms.

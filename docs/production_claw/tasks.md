@@ -36,3 +36,10 @@
 - Duplicate operations are guarded by `idempotency_keys` and `external_operation_locks`.
 - Human approval state is persisted in `approval_requests` and `approval_decisions`.
 - Celery eager mode is used in local tests; Docker Compose config runs a Redis-backed Celery worker.
+
+## Phase 3 Production Loop
+
+- Async workflow execution records LangGraph approval interrupts as `waiting_approval` tasks.
+- Approval API decisions resume the stored workflow and complete or fail the associated task.
+- Outbox worker delivery writes external delivery records once and skips duplicate delivery attempts.
+- Streamlit production sidebar includes queued, running, and `waiting_approval` tasks in the pending count.

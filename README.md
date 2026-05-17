@@ -1,77 +1,68 @@
-# TicketFlow
+# TicketFlow Agent Platform
 
-TicketFlow 是一个面向客服中心与 IT 服务台场景的工单协同智能体平台。项目目标不是做一个单轮客服聊天机器人，而是持续演进一个可运行、可评测、可审计、可恢复、可接入外部工具的业务型 Agent 系统。
-
-当前稳定版仍保留 Streamlit 运维台和 SQLite 本地运行方式；`production-claw-platform` 分支开始把系统升级为生产服务骨架，为后续 PostgreSQL、Celery、Qdrant、Neo4j、MinIO、Skill Runtime、Claw Harness 和观测系统铺路。
+TicketFlow 是一个面向客服与 IT 服务台场景的工单 Agent 平台。当前仓库保留稳定的 Streamlit 运维台，同时在 `production-claw-platform` 分支持续推进生产化：FastAPI 服务、Worker、任务状态、持久化审批、Outbox 幂等副作用和 Docker Compose 基础设施。
 
 ## 版本线
 
-- `main`：当前稳定主线。
-- `interview-stable`：已冻结的稳定演示基线。
-- `interview-stable-2026-05-17`：对应稳定演示基线的 Git tag。
-- `production-claw-platform`：生产级平台改造分支，所有服务化升级在这里推进。
+- `main`：稳定展示版。
+- `interview-stable`：下周面试可讲的冻结基线。
+- `production-claw-platform`：生产级平台改造分支，所有服务化升级都在这里推进。
+- `interview-stable-2026-05-17`：冻结 tag，方便随时回退。
 
-## 当前能力
+## 核心能力
 
-- 基于 LangGraph 的状态化工单工作流。
-- 工单分诊、混合检索、证据充分性判断、动作路由、工具级审批、动作执行、回复生成与事实校验。
-- 多来源证据：知识库、策略规则、历史工单、订单、客户资料与附件证据。
-- 本地 MiniMind 双 LoRA 与云端 OpenAI-compatible 模型后端切换。
-- MCP 邮件工具服务，支持真实 SMTP 链路的外部协同。
-- Streamlit 内部运维台，支持模型控制、工单运行、审批和链路展示。
-- 离线评测脚本和报告，用于追踪 RAG、动作治理、回复事实校验和多模态附件消融效果。
+- LangGraph 工单流程：分诊、检索、证据充分性判断、动作路由、工具级审批、动作执行、回复事实校验。
+- FastAPI 服务：工单查询、异步任务、审批、审计、Outbox 和运营概览。
+- Worker：Celery + Redis 模式执行工作流和 Outbox 投递，本地测试默认使用 eager 模式。
+- Durable HITL：高风险动作审批请求会持久化，审批后可通过 API 恢复 workflow。
+- Outbox Pattern：邮件、退款、升级等外部副作用先写 outbox，再由 worker 幂等消费。
+- Streamlit 运维台：保留为内部工作台，展示模型、RAG、邮箱、任务队列、审批队列和 Outbox 状态。
 
-## 生产服务骨架
-
-第一轮生产化改造新增 FastAPI 服务和 worker 骨架，但业务读写路径仍默认使用 SQLite fallback，避免在服务边界搭建阶段同时引入数据库迁移风险。
-
-### API
+## API
 
 ```bash
-python -m pip install -e .[dev]
 ticketflow-api
 ```
 
-默认地址：
-
-```text
-http://127.0.0.1:8000
-```
-
-首批接口：
+常用接口：
 
 - `GET /healthz`
 - `GET /readyz`
 - `GET /api/v1/tickets`
 - `GET /api/v1/tickets/{ticket_id}`
 - `POST /api/v1/tickets/{ticket_id}/run`
-- `GET /api/v1/tickets/{ticket_id}/audit`
-- `GET /api/v1/ops/summary`
+- `POST /api/v1/tickets/{ticket_id}/run?sync=true`
+- `GET /api/v1/tasks/{task_id}`
+- `POST /api/v1/tasks/{task_id}/cancel`
+- `GET /api/v1/approvals`
+- `POST /api/v1/approvals/{approval_id}/decision`
+- `GET /api/v1/outbox`
 
-### Worker
+默认异步运行会返回 `task_id`。如果工作流遇到退款或升级等敏感工具审批，任务会进入 `waiting_approval`，审批通过后 API 会自动 resume workflow 并更新任务状态。
+
+## Worker
 
 ```bash
 ticketflow-worker --mode local --once
 ticketflow-worker --list-tasks
+celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
 ```
 
-第一轮 worker 只提供任务注册表和健康输出，预留以下任务：
+当前注册任务：
 
 - `run_ticket_workflow`
 - `send_outbox_email`
 - `run_claw_task`
 - `build_knowledge_graph`
 
-Celery + Redis 的异步执行会在后续阶段接入。
-
-### Docker Compose
+## Docker Compose
 
 ```bash
 docker compose config
 docker compose up api worker postgres redis qdrant neo4j minio
 ```
 
-Compose 第一版包含：
+Compose 包含：
 
 - `api`
 - `worker`
@@ -81,9 +72,9 @@ Compose 第一版包含：
 - `neo4j`
 - `minio`
 
-这些基础设施先作为可启动服务存在；正式业务迁移会分阶段完成。
+当前业务默认仍使用 SQLite fallback，PostgreSQL/Qdrant/Neo4j/MinIO 先作为可启动基础设施，后续按阶段切换正式读写路径。
 
-## 本地运维台
+## 本地运行
 
 ```bash
 python -m pip install -e .[dev]
@@ -91,87 +82,44 @@ ticketflow-reset
 ticketflow-app
 ```
 
-或者直接运行：
+或者直接启动 Streamlit：
 
 ```bash
 streamlit run src/ticketflow/app.py
 ```
 
-浏览器访问：
-
-```text
-http://localhost:8501
-```
-
 ## 配置
 
-复制 `.env.example` 为 `.env` 后按需修改。本地密钥、SMTP 授权码、API Key 和生成数据都不应提交到 Git。
+复制 `.env.example` 为 `.env` 后按需修改。本地密钥、SMTP 授权码、API Key、数据库和缓存文件不要提交到 Git。
 
 常用生产骨架配置：
 
-```bash
+```env
 APP_ENV=development
-API_HOST=127.0.0.1
-API_PORT=8000
 DATABASE_BACKEND=sqlite
 DATABASE_URL=postgresql://ticketflow:ticketflow@localhost:5432/ticketflow
 REDIS_URL=redis://localhost:6379/0
-QDRANT_URL=http://localhost:6333
-NEO4J_URI=bolt://localhost:7687
-MINIO_ENDPOINT=http://localhost:9000
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+CELERY_TASK_ALWAYS_EAGER=true
 ENABLE_PRODUCTION_SERVICES=false
 ```
+
+Docker Compose 中 `CELERY_TASK_ALWAYS_EAGER=false`，worker 会通过 Redis broker 消费任务。
 
 ## 测试
 
 ```bash
 python -m pytest -q
+python -m pytest tests/test_api.py tests/test_worker.py tests/test_production_persistence.py -q
+docker compose config
 ```
 
-API 和 worker 骨架专项测试：
+如果 Docker Desktop 未启动，只能验证 `docker compose config`，不能实际 `up` 服务。
 
-```bash
-python -m pytest tests\test_api.py tests\test_worker.py -q
-```
+## 下一阶段
 
-## 后续路线
-
-1. PostgreSQL repository backend。
-2. Celery + Redis 异步任务与任务状态 API。
-3. Durable HITL 审批持久化与 workflow resume。
-4. Skill Runtime 注册、权限、审计与版本回滚。
-5. Neo4j / Graphiti 风格知识图谱记忆。
-6. Production Claw Harness、轨迹记录、Pass^3 和 leaderboard。
-7. OpenTelemetry、Prometheus、Grafana、Langfuse 观测体系。
-8. Locust / k6 / worker 并发压测与稳定性报告。
-
-## Phase 2：生产控制面
-
-当前分支已经加入生产控制面地基：
-
-- `workflow_tasks`：记录工单 workflow 任务状态。
-- `outbox_events`：将邮件、退款、升级等外部副作用先写入 outbox，再由 worker 消费。
-- `idempotency_keys`：防止同一业务操作重复执行。
-- `external_operation_locks`：为外部副作用提供互斥保护。
-- `approval_requests` / `approval_decisions`：持久化高风险工具审批请求和审批结果。
-
-默认本地开发使用 `CELERY_TASK_ALWAYS_EAGER=true`，方便无 Redis 时直接跑通测试。Docker Compose 中 worker 使用 Redis broker：
-
-```bash
-ticketflow-migrate --backend sqlite
-ticketflow-worker --mode local --once
-celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
-```
-
-异步运行工单：
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/tickets/TCK-0001/run
-curl http://127.0.0.1:8000/api/v1/tasks/<task_id>
-```
-
-同步调试仍然保留：
-
-```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/tickets/TCK-0001/run?sync=true"
-```
+1. PostgreSQL repository 深度替换 SQLite fallback。
+2. Streamlit 运维台全面切 API 任务状态。
+3. Claw Harness、Skill Runtime、Knowledge Graph 和 Observability。
+4. Locust / k6 / worker 并发压测与稳定性报告。

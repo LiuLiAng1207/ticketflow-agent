@@ -142,3 +142,38 @@ def test_approval_and_outbox_api_surfaces_persistent_state(ticketflow_project):
     assert decision.json()["approval"]["status"] == "approved"
     assert outbox_response.status_code == 200
     assert outbox_response.json()["events"][0]["event_id"] == outbox["event_id"]
+
+
+def test_approval_decision_api_resumes_waiting_workflow_task(ticketflow_project):
+    app = create_app(
+        project_root=ticketflow_project,
+        runner_overrides={"RAG_EMBED_BACKEND": "hash", "ENABLE_PRODUCTION_SERVICES": "true"},
+    )
+    with TestClient(app) as client:
+        tickets = client.get("/api/v1/tickets", params={"limit": 500}).json()["tickets"]
+        ticket_id = next(
+            ticket["ticket_id"]
+            for ticket in tickets
+            if ticket["expected_category"] == "billing_refund" and ticket["linked_order_id"]
+        )
+
+        queued = client.post(f"/api/v1/tickets/{ticket_id}/run")
+
+        assert queued.status_code == 202
+        queued_payload = queued.json()
+        assert queued_payload["status"] == "waiting_approval"
+
+        approvals = client.get("/api/v1/approvals", params={"status": "pending"}).json()["approvals"]
+        approval = approvals[0]
+        decision = client.post(
+            f"/api/v1/approvals/{approval['approval_id']}/decision",
+            json={"decision": "approve", "reviewer": "lead", "comment": "approve refund"},
+        )
+
+        assert decision.status_code == 200
+        payload = decision.json()
+        assert payload["approval"]["status"] == "approved"
+        assert payload["resume_result"]["interrupted"] is False
+
+        task = client.get(f"/api/v1/tasks/{queued_payload['task_id']}").json()["task"]
+        assert task["status"] == "succeeded"

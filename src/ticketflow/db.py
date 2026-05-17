@@ -749,6 +749,16 @@ class TicketFlowRepository:
             return None
         return self._workflow_task_from_row(row)
 
+    def get_workflow_task_by_thread(self, thread_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM workflow_tasks WHERE thread_id = ? ORDER BY created_at DESC LIMIT 1",
+                (thread_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return self._workflow_task_from_row(row)
+
     def list_workflow_tasks(self, limit: int = 100) -> list[dict[str, object]]:
         with self.connect() as conn:
             rows = conn.execute(
@@ -804,6 +814,26 @@ class TicketFlowRepository:
         task = self.get_workflow_task(task_id)
         if task is None:
             raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    def wait_workflow_task_for_approval(self, task_id: str, thread_id: str, approval_id: str | None) -> dict[str, object]:
+        now = _utc_now()
+        result = {"interrupted": True, "approval_id": approval_id, "thread_id": thread_id}
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE workflow_tasks
+                SET status = 'waiting_approval', thread_id = ?, result_json = ?,
+                    error_message = NULL, updated_at = ?
+                WHERE task_id = ?
+                """,
+                (thread_id, _json_dump(result), now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        task["approval_id"] = approval_id
         return task
 
     def fail_workflow_task(self, task_id: str, error_message: str) -> dict[str, object]:
@@ -890,6 +920,13 @@ class TicketFlowRepository:
             ).fetchone()
         assert row is not None
         return self._outbox_event_from_row(row, deduplicated=deduplicated)
+
+    def get_outbox_event(self, event_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM outbox_events WHERE event_id = ?", (event_id,)).fetchone()
+        if row is None:
+            return None
+        return self._outbox_event_from_row(row)
 
     def list_outbox_events(self, status: str | None = None, limit: int = 100) -> list[dict[str, object]]:
         with self.connect() as conn:
@@ -1070,6 +1107,43 @@ class TicketFlowRepository:
             conn.commit()
         approval = self.get_approval_request(approval_id)
         assert approval is not None
+        return approval
+
+    def ensure_approval_request(
+        self,
+        *,
+        ticket_id: str,
+        thread_id: str,
+        tool_name: str,
+        tool_args: dict[str, object],
+        payload: dict[str, object],
+        requested_by: str,
+        expires_at: str | None = None,
+    ) -> dict[str, object]:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT * FROM approval_requests
+                WHERE thread_id = ? AND tool_name = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (thread_id, tool_name),
+            ).fetchone()
+        if row is not None:
+            approval = self._approval_from_row(row)
+            approval["deduplicated"] = True
+            return approval
+        approval = self.create_approval_request(
+            ticket_id=ticket_id,
+            thread_id=thread_id,
+            tool_name=tool_name,
+            tool_args=tool_args,
+            payload=payload,
+            requested_by=requested_by,
+            expires_at=expires_at,
+        )
+        approval["deduplicated"] = False
         return approval
 
     def get_approval_request(self, approval_id: str) -> dict[str, object] | None:

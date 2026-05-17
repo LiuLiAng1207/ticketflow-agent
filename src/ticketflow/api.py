@@ -242,7 +242,8 @@ def create_app(
     @app.post("/api/v1/approvals/{approval_id}/decision")
     def decide_approval(approval_id: str, payload: ApprovalDecisionPayload, request: Request) -> dict[str, object]:
         runner = _get_runner(request)
-        if runner.repository.get_approval_request(approval_id) is None:
+        existing_approval = runner.repository.get_approval_request(approval_id)
+        if existing_approval is None:
             raise HTTPException(status_code=404, detail=f"Unknown approval_id: {approval_id}")
         decision = runner.repository.record_approval_decision(
             approval_id=approval_id,
@@ -252,7 +253,40 @@ def create_app(
             edited_action=payload.edited_action,
         )
         approval = runner.repository.get_approval_request(approval_id)
-        return {"approval": approval, "decision": decision}
+        resume_result = None
+        approval_payload = existing_approval.get("payload") if existing_approval else {}
+        workflow_task_id = approval_payload.get("workflow_task_id") if isinstance(approval_payload, dict) else None
+        thread_id = str(existing_approval.get("thread_id")) if existing_approval else ""
+        if workflow_task_id and thread_id:
+            edited_action = ActionProposal.model_validate(payload.edited_action) if payload.edited_action else None
+            review_decision = ReviewDecision(
+                decision=payload.decision,
+                edited_action=edited_action,
+                comment=payload.comment,
+            )
+            try:
+                runner.repository.mark_workflow_task_running(str(workflow_task_id))
+                result = runner.resume_ticket(thread_id, review_decision)
+                if result.interrupted:
+                    next_approval_id = result.interrupt_payload.get("approval_id") if result.interrupt_payload else None
+                    task = runner.repository.wait_workflow_task_for_approval(
+                        str(workflow_task_id),
+                        thread_id=str(result.state["thread_id"]),
+                        approval_id=str(next_approval_id) if next_approval_id else None,
+                    )
+                else:
+                    task = runner.repository.complete_workflow_task(
+                        str(workflow_task_id),
+                        result=result.model_dump(mode="json"),
+                    )
+                resume_result = {**_summarize_result(str(existing_approval["ticket_id"]), result), "task": task}
+            except Exception as exc:
+                runner.repository.fail_workflow_task(str(workflow_task_id), error_message=str(exc))
+                raise HTTPException(
+                    status_code=500,
+                    detail={"error": "workflow_resume_failed", "message": str(exc), "thread_id": thread_id},
+                ) from exc
+        return {"approval": approval, "decision": decision, "resume_result": resume_result}
 
     @app.post("/api/v1/workflows/{thread_id}/resume")
     def resume_workflow(thread_id: str, payload: WorkflowResumePayload, request: Request) -> dict[str, object]:

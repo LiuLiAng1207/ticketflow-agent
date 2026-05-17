@@ -101,7 +101,20 @@ def run_ticket_workflow_now(
         if task is None:
             raise KeyError(f"Unknown task_id: {task_id}")
         runner.repository.mark_workflow_task_running(task_id)
-        result = runner.run_ticket(str(task["ticket_id"]), thread_id=task.get("thread_id") or None)
+        result = runner.run_ticket(
+            str(task["ticket_id"]),
+            thread_id=task.get("thread_id") or None,
+            workflow_task_id=task_id,
+        )
+        if result.interrupted:
+            approval_id = None
+            if result.interrupt_payload:
+                approval_id = result.interrupt_payload.get("approval_id")
+            return runner.repository.wait_workflow_task_for_approval(
+                task_id,
+                thread_id=str(result.state["thread_id"]),
+                approval_id=str(approval_id) if approval_id else None,
+            )
         completed = runner.repository.complete_workflow_task(task_id, result=result.model_dump(mode="json"))
         return completed
     except Exception as exc:
@@ -130,6 +143,78 @@ def enqueue_run_ticket_workflow(
 ) -> str:
     async_result = run_ticket_workflow_task.delay(str(task_id), str(project_root), runner_overrides)
     return str(async_result.id)
+
+
+def deliver_outbox_event_now(
+    *,
+    event_id: str,
+    project_root: str | Path,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
+    try:
+        event = runner.repository.get_outbox_event(event_id)
+        if event is None:
+            raise KeyError(f"Unknown event_id: {event_id}")
+        if event["status"] == "delivered":
+            return event
+
+        lock = runner.repository.acquire_external_operation_lock(
+            lock_key=f"outbox:{event_id}",
+            ticket_id=str(event["ticket_id"]),
+            operation_type=str(event["operation_type"]),
+            acquired_by="ticketflow-worker",
+        )
+        if not lock["acquired"]:
+            return event
+
+        payload = event["payload"] if isinstance(event["payload"], dict) else {}
+        if payload.get("simulate_error"):
+            raise RuntimeError(str(payload["simulate_error"]))
+
+        operation_type = str(event["operation_type"])
+        if operation_type in {"incident_email", "kb_candidate_email"}:
+            recipient = str(payload.get("recipient") or (payload.get("recipients") or ["-"])[0])
+            subject = str(payload.get("subject") or f"[TicketFlow] {operation_type} {event['ticket_id']}")
+            runner.repository.create_external_email_delivery(
+                ticket_id=str(event["ticket_id"]),
+                message_type=operation_type,
+                recipient=recipient,
+                subject=subject,
+                status="sent",
+                provider_message_id=str(payload.get("provider_message_id") or event_id),
+                latency_ms=0,
+                error_message=None,
+                payload=payload,
+            )
+        elif operation_type == "issue_refund_request":
+            args = payload.get("tool_args") if isinstance(payload.get("tool_args"), dict) else payload
+            runner.tools.issue_refund_request(**args)
+            if payload.get("target_status"):
+                runner.tools.update_ticket_status(str(event["ticket_id"]), str(payload["target_status"]))
+        elif operation_type == "create_escalation":
+            args = payload.get("tool_args") if isinstance(payload.get("tool_args"), dict) else payload
+            runner.tools.create_escalation(**args)
+            if payload.get("target_status"):
+                runner.tools.update_ticket_status(str(event["ticket_id"]), str(payload["target_status"]))
+
+        return runner.repository.mark_outbox_event_delivered(event_id)
+    except Exception as exc:
+        try:
+            return runner.repository.mark_outbox_event_failed(event_id, str(exc))
+        except Exception:
+            raise exc
+    finally:
+        runner.close()
+
+
+@celery_app.task(name="ticketflow.deliver_outbox_event")
+def deliver_outbox_event_task(event_id: str, project_root: str, runner_overrides: dict[str, str] | None = None) -> dict[str, Any]:
+    return deliver_outbox_event_now(
+        event_id=event_id,
+        project_root=project_root,
+        runner_overrides=runner_overrides,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:

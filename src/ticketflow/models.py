@@ -201,7 +201,7 @@ class ReviewDecision(BaseModel):
 
 
 class ExecutionResult(BaseModel):
-    status: Literal["executed", "skipped", "needs_handoff", "rejected"]
+    status: Literal["executed", "queued", "skipped", "needs_handoff", "rejected"]
     tool_name: str | None = None
     tool_output: dict[str, Any] = Field(default_factory=dict)
     handoff_required: bool = False
@@ -246,7 +246,7 @@ class ReplyFactCheckResult(BaseModel):
 
 class ExternalOpRecord(BaseModel):
     op_type: Literal["incident_email", "kb_candidate_email"]
-    status: Literal["sent", "failed", "skipped"]
+    status: Literal["sent", "queued", "failed", "skipped"]
     recipient: str
     subject: str
     provider_message_id: str | None = None
@@ -265,6 +265,7 @@ class InvocationResult(BaseModel):
 
 class TicketFlowState(TypedDict):
     thread_id: str
+    workflow_task_id: NotRequired[str]
     ticket: TicketRecord
     attachments: NotRequired[list[AttachmentRecord]]
     attachment_evidence: NotRequired[list[AttachmentEvidence]]

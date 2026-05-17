@@ -88,6 +88,7 @@ class TicketFlowSettings:
     email_from_name: str = "TicketFlow Agent"
     incident_email_to: str | None = None
     kb_ops_email_to: str | None = None
+    enable_production_services: bool = False
 
     @property
     def cloud_llm_enabled(self) -> bool:
@@ -197,4 +198,5 @@ class TicketFlowSettings:
             email_from_name=os.getenv("EMAIL_FROM_NAME", "TicketFlow Agent"),
             incident_email_to=os.getenv("INCIDENT_EMAIL_TO"),
             kb_ops_email_to=os.getenv("KB_OPS_EMAIL_TO"),
+            enable_production_services=_get_bool("ENABLE_PRODUCTION_SERVICES", False),
         )

@@ -286,11 +286,14 @@ class TicketFlowRunner:
     def reset_demo_data(self) -> None:
         self.repository.reset_from_seed(self.settings.seed_dir)
 
-    def run_ticket(self, ticket_id: str, thread_id: str | None = None) -> InvocationResult:
+    def run_ticket(self, ticket_id: str, thread_id: str | None = None, workflow_task_id: str | None = None) -> InvocationResult:
         ticket = self.get_ticket(ticket_id)
         thread_id = thread_id or f"thread-{ticket.ticket_id.lower()}-{uuid4().hex[:8]}"
         config = {"configurable": {"thread_id": thread_id}}
-        output = self.graph.invoke({"thread_id": thread_id, "ticket": ticket}, config=config)
+        initial_state: dict[str, Any] = {"thread_id": thread_id, "ticket": ticket}
+        if workflow_task_id:
+            initial_state["workflow_task_id"] = workflow_task_id
+        output = self.graph.invoke(initial_state, config=config)
         return self._normalize_result(thread_id, output)
 
     def resume_ticket(self, thread_id: str, decision: ReviewDecision | dict[str, Any]) -> InvocationResult:
@@ -653,7 +656,7 @@ class TicketFlowRunner:
         if incident_record is not None:
             external_ops.append(incident_record)
             tool_calls.append({"tool": "mcp.send_incident_email", "input": {"ticket_id": ticket.ticket_id}})
-            self.tools.save_external_email_delivery(ticket.ticket_id, incident_record)
+            self._record_external_operation(ticket.ticket_id, incident_record, business_key=f"incident:{ticket.ticket_id}")
             trace = _append_trace(
                 {"trace": trace},
                 "supervisor",
@@ -778,7 +781,7 @@ class TicketFlowRunner:
         if kb_record is not None:
             external_ops.append(kb_record)
             tool_calls.append({"tool": "mcp.submit_kb_candidate_email", "input": {"ticket_id": ticket.ticket_id}})
-            self.tools.save_external_email_delivery(ticket.ticket_id, kb_record)
+            self._record_external_operation(ticket.ticket_id, kb_record, business_key=f"kb_candidate:{ticket.ticket_id}:{response.status}")
             trace = _append_trace(
                 {"trace": trace},
                 "supervisor",
@@ -865,22 +868,32 @@ class TicketFlowRunner:
                 "tool_approval_policy": tool_policy,
             }
 
-        decision_payload = interrupt(
-            {
-                "ticket_id": ticket.ticket_id,
-                "title": ticket.title,
-                "proposed_action": proposed_action.model_dump(mode="json"),
-                "reason": proposed_action.rationale,
-                "tool_policy": tool_policy.model_dump(mode="json"),
-                "sufficiency": sufficiency_result.model_dump(mode="json") if sufficiency_result is not None else None,
-                "route_family": proposed_action.route_family,
-                "required_sources": sufficiency_result.required_sources if sufficiency_result is not None else [],
-                "missing_sources": proposed_action.missing_sources,
-                "supporting_doc_ids": proposed_action.supporting_doc_ids,
-                "tool_name": proposed_action.suggested_tool,
-                "tool_args": proposed_action.tool_args,
-            }
+        interrupt_payload = {
+            "ticket_id": ticket.ticket_id,
+            "thread_id": state.get("thread_id"),
+            "workflow_task_id": state.get("workflow_task_id"),
+            "title": ticket.title,
+            "proposed_action": proposed_action.model_dump(mode="json"),
+            "reason": proposed_action.rationale,
+            "tool_policy": tool_policy.model_dump(mode="json"),
+            "sufficiency": sufficiency_result.model_dump(mode="json") if sufficiency_result is not None else None,
+            "route_family": proposed_action.route_family,
+            "required_sources": sufficiency_result.required_sources if sufficiency_result is not None else [],
+            "missing_sources": proposed_action.missing_sources,
+            "supporting_doc_ids": proposed_action.supporting_doc_ids,
+            "tool_name": proposed_action.suggested_tool,
+            "tool_args": proposed_action.tool_args,
+        }
+        approval = self.repository.ensure_approval_request(
+            ticket_id=ticket.ticket_id,
+            thread_id=str(state.get("thread_id")),
+            tool_name=proposed_action.suggested_tool,
+            tool_args=proposed_action.tool_args,
+            payload=interrupt_payload,
+            requested_by="workflow",
         )
+        interrupt_payload["approval_id"] = approval["approval_id"]
+        decision_payload = interrupt(interrupt_payload)
         review_decision = ReviewDecision.model_validate(decision_payload)
         detail = f"工具级审批已完成，结果={review_decision.decision}。"
         trace = _append_trace(state, "manager", "approval_gate", detail, review_decision.model_dump(mode="json"))
@@ -953,7 +966,7 @@ class TicketFlowRunner:
         if incident_record is not None:
             external_ops.append(incident_record)
             tool_calls.append({"tool": "mcp.send_incident_email", "input": {"ticket_id": ticket.ticket_id}})
-            self.tools.save_external_email_delivery(ticket.ticket_id, incident_record)
+            self._record_external_operation(ticket.ticket_id, incident_record, business_key=f"incident:{ticket.ticket_id}")
             trace = _append_trace(
                 {"trace": trace},
                 "supervisor",
@@ -980,6 +993,21 @@ class TicketFlowRunner:
             "tool_approval_policy": tool_policy,
         }
 
+    def _record_external_operation(self, ticket_id: str, record: ExternalOpRecord, *, business_key: str) -> None:
+        if self.settings.enable_production_services and record.status == "queued":
+            self.repository.create_outbox_event(
+                ticket_id=ticket_id,
+                operation_type=record.op_type,
+                business_key=business_key,
+                payload={
+                    **record.payload,
+                    "recipient": record.recipient,
+                    "subject": record.subject,
+                },
+            )
+            return
+        self.tools.save_external_email_delivery(ticket_id, record)
+
     def _run_action_with_guards(self, ticket: TicketRecord, action: ActionProposal) -> dict[str, Any]:
         if action.suggested_tool == "issue_refund_request" and (
             not action.tool_args.get("order_id") or action.tool_args.get("amount") in {None, ""}
@@ -993,6 +1021,22 @@ class TicketFlowRunner:
             }
 
         try:
+            if self.settings.enable_production_services and action.suggested_tool in {"issue_refund_request", "create_escalation"}:
+                business_value = action.tool_args.get("order_id") or action.tool_args.get("reason") or action.target_status
+                event = self.repository.create_outbox_event(
+                    ticket_id=ticket.ticket_id,
+                    operation_type=action.suggested_tool,
+                    business_key=f"{action.suggested_tool}:{ticket.ticket_id}:{business_value}",
+                    payload={"tool_args": action.tool_args, "target_status": action.target_status},
+                )
+                self.tools.update_ticket_status(ticket.ticket_id, action.target_status)
+                return {
+                    "status": "queued",
+                    "tool_name": action.suggested_tool,
+                    "tool_output": {"outbox_event_id": event["event_id"], "deduplicated": event["deduplicated"]},
+                    "handoff_required": False,
+                    "error": None,
+                }
             if action.suggested_tool == "issue_refund_request":
                 tool_output = self.tools.issue_refund_request(**action.tool_args)
                 self.tools.update_ticket_status(ticket.ticket_id, action.target_status)
@@ -1136,7 +1180,7 @@ class TicketFlowRunner:
         if kb_record is not None:
             external_ops.append(kb_record)
             tool_calls.append({"tool": "mcp.submit_kb_candidate_email", "input": {"ticket_id": ticket.ticket_id}})
-            self.tools.save_external_email_delivery(ticket.ticket_id, kb_record)
+            self._record_external_operation(ticket.ticket_id, kb_record, business_key=f"kb_candidate:{ticket.ticket_id}:{response.status}")
             trace = _append_trace(
                 {"trace": trace},
                 "supervisor",
@@ -1175,6 +1219,27 @@ class TicketFlowRunner:
                 created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
                 error_message="INCIDENT_EMAIL_TO 未配置",
                 payload={"reason": "missing_incident_email_to"},
+            )
+        if self.settings.enable_production_services:
+            evidence_refs = [citation.source_path for doc in state.get("retrieved_docs", [])[:4] for citation in doc.citations[:1]]
+            payload = {
+                "ticket_id": ticket.ticket_id,
+                "category": triage_result.category,
+                "priority": triage_result.priority,
+                "sla_risk": triage_result.sla_risk,
+                "customer_tier": ticket.customer_tier,
+                "action_type": action.action_type,
+                "summary": f"{ticket.title} | {ticket.body[:80]}",
+                "evidence_refs": evidence_refs or ["无显式证据引用"],
+                "recipients": [self.settings.incident_email_to],
+            }
+            return ExternalOpRecord(
+                op_type="incident_email",
+                status="queued",
+                recipient=self.settings.incident_email_to,
+                subject=f"[TicketFlow 升级通知] {ticket.ticket_id} | {triage_result.category} | {triage_result.priority}",
+                created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
+                payload=payload,
             )
         smtp_issue = self._smtp_configuration_issue() if isinstance(self.email_client, MCPEmailClient) else None
         if smtp_issue:
@@ -1255,6 +1320,28 @@ class TicketFlowRunner:
                 created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
                 error_message="KB_OPS_EMAIL_TO 未配置",
                 payload={"reason": "missing_kb_ops_email_to"},
+            )
+        if self.settings.enable_production_services:
+            retrieved_docs = state.get("retrieved_docs", [])
+            evidence_refs = [citation.source_path for doc in retrieved_docs[:4] for citation in doc.citations[:1]]
+            gap_reason = self._knowledge_gap_reason(ticket, triage_result, state)
+            payload = {
+                "ticket_id": ticket.ticket_id,
+                "category": triage_result.category,
+                "issue_summary": ticket.title,
+                "resolution_summary": response.internal_note,
+                "knowledge_gap_reason": gap_reason,
+                "suggested_kb_title": f"{ticket.title} 处理说明",
+                "evidence_refs": evidence_refs or ["无显式证据引用"],
+                "recipients": [self.settings.kb_ops_email_to],
+            }
+            return ExternalOpRecord(
+                op_type="kb_candidate_email",
+                status="queued",
+                recipient=self.settings.kb_ops_email_to,
+                subject=f"[TicketFlow 知识候选] {ticket.ticket_id} | {ticket.title}",
+                created_at=time.strftime("%Y-%m-%dT%H:%M:%S"),
+                payload=payload,
             )
         smtp_issue = self._smtp_configuration_issue() if isinstance(self.email_client, MCPEmailClient) else None
         if smtp_issue:
