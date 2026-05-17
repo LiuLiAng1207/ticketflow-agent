@@ -50,6 +50,71 @@ def test_runtime_env_overrides_for_minimind_switch_keeps_local_backend(tmp_path:
     assert overrides["MINIMIND_REPLY_BASE_URL"] == "http://127.0.0.1:9012/v1"
 
 
+def test_service_api_base_url_uses_explicit_or_normalized_host(monkeypatch, tmp_path: Path) -> None:
+    from ticketflow.app import _service_api_base_url
+
+    monkeypatch.delenv("TICKETFLOW_API_URL", raising=False)
+    monkeypatch.delenv("API_BASE_URL", raising=False)
+    monkeypatch.delenv("API_HOST", raising=False)
+    monkeypatch.delenv("API_PORT", raising=False)
+    (tmp_path / ".env").write_text("API_HOST=0.0.0.0\nAPI_PORT=18000\n", encoding="utf-8")
+
+    assert _service_api_base_url(tmp_path) == "http://127.0.0.1:18000"
+
+    (tmp_path / ".env").write_text("TICKETFLOW_API_URL=http://ticketflow-api:8000/\n", encoding="utf-8")
+
+    assert _service_api_base_url(tmp_path) == "http://ticketflow-api:8000"
+
+
+def test_control_plane_snapshot_prefers_api(monkeypatch, tmp_path: Path) -> None:
+    from ticketflow.app import _load_control_plane_snapshot
+
+    def fake_fetch(base_url: str, path: str, *, timeout: float = 1.5):
+        del base_url, timeout
+        if path == "/readyz":
+            return {"database": {"backend": "postgres"}, "dependencies": {"celery": {"task_always_eager": False}}}
+        if path.startswith("/api/v1/tasks"):
+            return {"tasks": [{"task_id": "task-api", "status": "queued"}]}
+        if path.startswith("/api/v1/approvals"):
+            return {"approvals": [{"approval_id": "approval-api", "status": "pending"}]}
+        if path.startswith("/api/v1/outbox"):
+            return {"events": [{"event_id": "outbox-api", "status": "pending"}]}
+        raise AssertionError(path)
+
+    monkeypatch.setattr("ticketflow.app._fetch_api_json", fake_fetch)
+    runner = SimpleNamespace(repository=SimpleNamespace())
+
+    snapshot = _load_control_plane_snapshot(tmp_path, runner)
+
+    assert snapshot["source"] == "api"
+    assert snapshot["tasks"][0]["task_id"] == "task-api"
+    assert snapshot["approvals"][0]["approval_id"] == "approval-api"
+    assert snapshot["outbox_events"][0]["event_id"] == "outbox-api"
+
+
+def test_control_plane_snapshot_falls_back_to_repository(monkeypatch, tmp_path: Path) -> None:
+    from ticketflow.app import _load_control_plane_snapshot
+
+    def broken_fetch(base_url: str, path: str, *, timeout: float = 1.5):
+        del base_url, path, timeout
+        raise OSError("api offline")
+
+    repository = SimpleNamespace(
+        list_workflow_tasks=lambda limit=20: [{"task_id": "task-local", "status": "running"}],
+        list_approval_requests=lambda limit=20: [{"approval_id": "approval-local", "status": "pending"}],
+        list_outbox_events=lambda limit=20: [{"event_id": "outbox-local", "status": "pending"}],
+    )
+    monkeypatch.setattr("ticketflow.app._fetch_api_json", broken_fetch)
+
+    snapshot = _load_control_plane_snapshot(tmp_path, SimpleNamespace(repository=repository))
+
+    assert snapshot["source"] == "repository"
+    assert "api offline" in snapshot["error"]
+    assert snapshot["tasks"][0]["task_id"] == "task-local"
+    assert snapshot["approvals"][0]["approval_id"] == "approval-local"
+    assert snapshot["outbox_events"][0]["event_id"] == "outbox-local"
+
+
 def test_sidebar_keeps_expand_control_visible() -> None:
     app_source = Path("src/ticketflow/app.py").read_text(encoding="utf-8")
 

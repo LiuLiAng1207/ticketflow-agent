@@ -62,3 +62,10 @@
 - High-risk refund workflows enter `waiting_approval`, persist approval payload snapshots, and resume through `POST /api/v1/approvals/{approval_id}/decision`.
 - Workflow-created Outbox events are enqueued for delivery after approval resume; API-created Outbox events are enqueued immediately.
 - Outbox delivery uses the worker plus operation locks to avoid duplicate external side effects.
+
+## Phase 6 API-First Ops Console
+
+- Streamlit production control panel now targets the FastAPI service first instead of reading local repository state by default.
+- The panel displays API availability, API URL, database backend, Celery mode, task queue, approval queue, and Outbox queue.
+- If FastAPI is offline, the panel falls back to the local repository and shows the fallback reason instead of breaking the UI.
+- `TICKETFLOW_API_URL` or `API_BASE_URL` can override the API address; otherwise `API_HOST` and `API_PORT` are used.

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
+import urllib.error
+import urllib.request
 
 import streamlit as st
 
@@ -217,6 +220,62 @@ def _load_env_overrides(project_root: Path) -> dict[str, str]:
 def _set_default_if_blank(overrides: dict[str, str], key: str, value: str) -> None:
     if not overrides.get(key):
         overrides[key] = value
+
+
+def _service_api_base_url(project_root: Path | None = None) -> str:
+    root = project_root or _project_root()
+    overrides = _load_env_overrides(root)
+    explicit_url = (
+        os.getenv("TICKETFLOW_API_URL")
+        or overrides.get("TICKETFLOW_API_URL")
+        or os.getenv("API_BASE_URL")
+        or overrides.get("API_BASE_URL")
+    )
+    if explicit_url:
+        return explicit_url.rstrip("/")
+
+    host = os.getenv("API_HOST") or overrides.get("API_HOST") or "127.0.0.1"
+    port = os.getenv("API_PORT") or overrides.get("API_PORT") or "8000"
+    if host in {"0.0.0.0", "::"}:
+        host = "127.0.0.1"
+    return f"http://{host}:{port}".rstrip("/")
+
+
+def _fetch_api_json(base_url: str, path: str, *, timeout: float = 1.5) -> dict[str, Any]:
+    request = urllib.request.Request(f"{base_url.rstrip('/')}{path}", headers={"Accept": "application/json"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -> dict[str, Any]:
+    api_base_url = _service_api_base_url(project_root)
+    try:
+        ready = _fetch_api_json(api_base_url, "/readyz")
+        tasks = _fetch_api_json(api_base_url, "/api/v1/tasks?limit=20").get("tasks", [])
+        approvals = _fetch_api_json(api_base_url, "/api/v1/approvals?limit=20").get("approvals", [])
+        outbox_events = _fetch_api_json(api_base_url, "/api/v1/outbox?limit=20").get("events", [])
+        return {
+            "source": "api",
+            "api_base_url": api_base_url,
+            "ready": ready,
+            "tasks": tasks,
+            "approvals": approvals,
+            "outbox_events": outbox_events,
+            "error": None,
+        }
+    except (OSError, TimeoutError, urllib.error.URLError, json.JSONDecodeError) as exc:
+        tasks = runner.repository.list_workflow_tasks(limit=20)
+        approvals = runner.repository.list_approval_requests(limit=20)
+        outbox_events = runner.repository.list_outbox_events(limit=20)
+        return {
+            "source": "repository",
+            "api_base_url": api_base_url,
+            "ready": None,
+            "tasks": tasks,
+            "approvals": approvals,
+            "outbox_events": outbox_events,
+            "error": str(exc),
+        }
 
 
 def _runtime_env_overrides(project_root: Path, selected_backend: str | None = None) -> dict[str, str]:
@@ -1744,13 +1803,30 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
 def _render_production_control_panel(runner: TicketFlowRunner) -> None:
     st.sidebar.markdown("**生产控制面**")
     try:
-        tasks = runner.repository.list_workflow_tasks(limit=20)
-        approvals = runner.repository.list_approval_requests(limit=20)
-        outbox_events = runner.repository.list_outbox_events(limit=20)
+        snapshot = _load_control_plane_snapshot(_project_root(), runner)
+        tasks = snapshot["tasks"]
+        approvals = snapshot["approvals"]
+        outbox_events = snapshot["outbox_events"]
     except Exception as exc:  # noqa: BLE001 - ops sidebar must fail softly.
         st.sidebar.warning("生产控制面状态读取失败。")
         st.sidebar.caption(str(exc))
         return
+
+    if snapshot["source"] == "api":
+        st.sidebar.success("API 服务：已连接")
+    else:
+        st.sidebar.warning("API 服务：未连接，已回退本地仓储")
+        st.sidebar.caption(f"目标地址：{snapshot['api_base_url']}")
+        if snapshot.get("error"):
+            st.sidebar.caption(f"回退原因：{snapshot['error']}")
+
+    ready = snapshot.get("ready") or {}
+    if isinstance(ready, dict) and ready:
+        database = ready.get("database") if isinstance(ready.get("database"), dict) else {}
+        celery = ready.get("dependencies", {}).get("celery", {}) if isinstance(ready.get("dependencies"), dict) else {}
+        st.sidebar.caption(f"API 地址：{snapshot['api_base_url']}")
+        st.sidebar.caption(f"数据后端：{database.get('backend', 'unknown')}")
+        st.sidebar.caption(f"Celery：{'队列模式' if not celery.get('task_always_eager') else '本地同步模式'}")
 
     pending_tasks = sum(1 for item in tasks if item.get("status") in {"queued", "running", "waiting_approval"})
     pending_approvals = sum(1 for item in approvals if item.get("status") == "pending")

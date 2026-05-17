@@ -25,3 +25,4 @@
 - Phase 5 Docker smoke verified with PostgreSQL + Redis + API + Worker: `/healthz`, `/readyz`, ticket listing, async workflow execution, durable approval resume, and Outbox delivery all ran through containerized services.
 - Fixed PostgreSQL seed loading for psycopg by using cursor-level `executemany`.
 - Completed Outbox queue handoff: API-created events and workflow-created high-risk side-effect events are enqueued to the Celery worker and delivered idempotently.
+- Phase 6 API-first ops console started: Streamlit production control panel now reads API readiness, task queue, approval queue, and Outbox state from FastAPI first, then falls back to local repository if the API is offline.
