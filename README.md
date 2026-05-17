@@ -1,151 +1,97 @@
 # TicketFlow
 
-TicketFlow 是一个面向客服中心与 IT 服务台场景的工单协同平台。项目目标是持续迭代一个可运行、可评测、可审计、可接入外部工具的业务型智能工单系统。
+TicketFlow 是一个面向客服中心与 IT 服务台场景的工单协同智能体平台。项目目标不是做一个单轮客服聊天机器人，而是持续演进一个可运行、可评测、可审计、可恢复、可接入外部工具的业务型 Agent 系统。
 
-系统围绕真实工单处理链路设计：先理解工单，再检索证据，判断证据是否足够支撑动作，随后进行动作路由、工具审批、执行、回复生成与事实校验。高风险动作不会直接交给模型自由决定，而是通过证据充分性、工具级审批和审计日志共同约束。
+当前稳定版仍保留 Streamlit 运维台和 SQLite 本地运行方式；`production-claw-platform` 分支开始把系统升级为生产服务骨架，为后续 PostgreSQL、Celery、Qdrant、Neo4j、MinIO、Skill Runtime、Claw Harness 和观测系统铺路。
 
-## 项目定位
+## 版本线
 
-TicketFlow 关注的是“工单怎么被安全、可解释地处理”，而不是单纯“让模型回答一句话”。
-
-- 工单协同：支持分诊、证据检索、状态流转、工具执行和人工审批。
-- 证据驱动：知识库、策略规则、订单数据、客户信息、历史工单共同组成证据链。
-- 治理优先：退款、升级、外部通知等动作会经过证据充分性判断和工具策略控制。
-- 可观测：每个节点都会留下执行轨迹、审计事件、工具调用记录和回复校验结果。
-- 可持续迭代：评测脚本、专项 benchmark、A40 评测报告和前端工作台会随着项目继续更新。
+- `main`：当前稳定主线。
+- `interview-stable`：已冻结的稳定演示基线。
+- `interview-stable-2026-05-17`：对应稳定演示基线的 Git tag。
+- `production-claw-platform`：生产级平台改造分支，所有服务化升级在这里推进。
 
 ## 当前能力
 
-### 工单处理工作流
+- 基于 LangGraph 的状态化工单工作流。
+- 工单分诊、混合检索、证据充分性判断、动作路由、工具级审批、动作执行、回复生成与事实校验。
+- 多来源证据：知识库、策略规则、历史工单、订单、客户资料与附件证据。
+- 本地 MiniMind 双 LoRA 与云端 OpenAI-compatible 模型后端切换。
+- MCP 邮件工具服务，支持真实 SMTP 链路的外部协同。
+- Streamlit 内部运维台，支持模型控制、工单运行、审批和链路展示。
+- 离线评测脚本和报告，用于追踪 RAG、动作治理、回复事实校验和多模态附件消融效果。
 
-主链路基于 LangGraph 实现，核心步骤包括：
+## 生产服务骨架
 
-1. 接收工单并生成流程状态。
-2. 分诊工单类别、优先级、服务风险和客户等级。
-3. 从知识库、策略规则、订单、客户资料、历史工单和附件证据中检索上下文。
-4. 评估上下文证据是否足够支撑当前动作家族。
-5. 根据证据充分性进行动作路由。
-6. 生成结构化动作建议。
-7. 对敏感工具进行审批控制。
-8. 执行动作或更新工单状态。
-9. 生成客户回复草稿。
-10. 对回复做事实校验和必要降级。
-11. 记录审计日志并完成归档。
+第一轮生产化改造新增 FastAPI 服务和 worker 骨架，但业务读写路径仍默认使用 SQLite fallback，避免在服务边界搭建阶段同时引入数据库迁移风险。
 
-### 混合检索与证据链
+### API
 
-项目当前支持多来源证据：
+```bash
+python -m pip install -e .[dev]
+ticketflow-api
+```
 
-- 策略规则：退款、升级、服务台处理规范等高优先级业务依据。
-- 知识库：常见问题、操作手册、处理建议。
-- 历史工单：相似案例、既往处理动作和处理结果。
-- 订单信息：订单号、支付状态、金额、退款状态。
-- 客户资料：客户等级、产品订阅、服务状态。
-- 附件证据：截图、支付凭证、错误页面等多模态工单输入。
-
-检索链路支持关键词检索、向量检索、来源配额、历史案例重排和专项评测。A40 评测报告保存在 `reports/` 目录，用于跟踪不同检索策略下的 HitRate、MRR、错误率和证据召回情况。
-
-### Sufficiency-First 治理
-
-TicketFlow 使用“证据充分性优先”的治理思路：先判断证据是否足够，再决定动作能否继续。
-
-- 退款候选路线需要策略证据和订单证据共同支撑。
-- 升级候选路线需要策略证据和高质量历史案例支撑。
-- 普通处理路线允许弱约束，但仍会保留缺失证据和支持文档。
-- 证据不足时，系统优先请求补充信息或转入人工队列，而不是让模型直接生成高风险动作。
-
-### 工具级审批
-
-系统把“是否需要人审”下沉到工具层，而不是只按动作文本粗略拦截。
-
-- 退款申请工具：敏感工具，执行前必须审批。
-- 升级处理工具：敏感工具，支持审批、编辑或拒绝。
-- 工单状态更新工具：低风险工具，默认可自动执行。
-- 邮件工具：用于外部协同，保留发送结果和审计记录。
-
-审批面板会呈现动作路线、证据充分性、支持文档、缺失来源、工具名和工具参数，方便人工判断。
-
-### 回复事实校验
-
-回复不是生成后直接发出，而是经过事实校验：
-
-- 检查回复是否和工单状态一致。
-- 检查是否承诺了尚未执行的动作。
-- 检查关键断言是否能被证据支撑。
-- 校验失败时进行约束重写或降级为保守回复。
-
-这部分的目标是降低客服回复中的幻觉、越权承诺和状态口径漂移。
-
-### 本地模型与云端模型
-
-系统支持多种模型后端：
-
-- 云端 OpenAI-compatible 接口，例如 DeepSeek、GLM 或其他兼容服务。
-- 本地 MiniMind 双 LoRA 服务，用于结构化分诊和回复生成实验。
-- 规则兜底路径，用于离线测试、模型不可用和高风险保守处理。
-
-前端工作台提供模型后端切换、本地模型探活、MiniMind 启停和运行状态显示。
-
-### 外部协同
-
-项目封装了独立的邮件 MCP 服务，并通过 SMTP 接入真实邮箱链路。当前用于：
-
-- 升级通知。
-- 知识库候选提交。
-- 外部协同结果记录。
-
-邮件服务不会绕过工作流直接发送，发送结果会进入审计日志，便于后续追踪。
-
-## 技术栈
-
-- Python：主业务逻辑、工具封装、评测脚本和数据处理。
-- LangGraph：状态化工单工作流和节点编排。
-- Chroma：本地向量检索与证据存储。
-- SQLite：工单、订单、客户、审计和工具调用状态存储。
-- Redis：缓存和后续性能优化预留。
-- Streamlit：业务运维台和人工审批界面。
-- MCP：邮件工具服务封装。
-- Transformers / BGE：向量检索、重排序和本地模型实验。
-- Pytest：单元测试和回归测试。
-
-## 目录结构
+默认地址：
 
 ```text
-ticketflow/
-├── data/                  # 种子数据、专项评测数据和附件样例
-├── docs/                  # 项目设计、评测说明和业务文档
-├── reports/               # 离线评测报告、A40 评测结果和截图
-├── scripts/               # 启动脚本、A40 运行脚本和报告生成脚本
-├── src/ticketflow/        # 主系统源码
-├── tests/                 # 单元测试与回归测试
-├── README.md              # 项目说明
-└── pyproject.toml         # Python 包配置
+http://127.0.0.1:8000
 ```
 
-## 本地运行
+首批接口：
 
-### 安装依赖
+- `GET /healthz`
+- `GET /readyz`
+- `GET /api/v1/tickets`
+- `GET /api/v1/tickets/{ticket_id}`
+- `POST /api/v1/tickets/{ticket_id}/run`
+- `GET /api/v1/tickets/{ticket_id}/audit`
+- `GET /api/v1/ops/summary`
+
+### Worker
 
 ```bash
-cd ticketflow-agent
+ticketflow-worker --mode local --once
+ticketflow-worker --list-tasks
+```
+
+第一轮 worker 只提供任务注册表和健康输出，预留以下任务：
+
+- `run_ticket_workflow`
+- `send_outbox_email`
+- `run_claw_task`
+- `build_knowledge_graph`
+
+Celery + Redis 的异步执行会在后续阶段接入。
+
+### Docker Compose
+
+```bash
+docker compose config
+docker compose up api worker postgres redis qdrant neo4j minio
+```
+
+Compose 第一版包含：
+
+- `api`
+- `worker`
+- `postgres`
+- `redis`
+- `qdrant`
+- `neo4j`
+- `minio`
+
+这些基础设施先作为可启动服务存在；正式业务迁移会分阶段完成。
+
+## 本地运维台
+
+```bash
 python -m pip install -e .[dev]
-```
-
-如果需要运行更完整的检索模型能力，可以额外安装：
-
-```bash
-python -m pip install -e .[dev,rag-pro]
-```
-
-### 初始化数据
-
-```bash
 ticketflow-reset
+ticketflow-app
 ```
 
-系统会在 `data/generated/` 下生成本地 SQLite 数据库和检索缓存。该目录属于运行时产物，不进入 Git。
-
-### 启动前端
+或者直接运行：
 
 ```bash
 streamlit run src/ticketflow/app.py
@@ -157,164 +103,44 @@ streamlit run src/ticketflow/app.py
 http://localhost:8501
 ```
 
-安装为本地包后，也可以使用命令行入口启动：
-
-```bash
-ticketflow-app
-```
-
 ## 配置
 
-项目通过环境变量或 `.env` 配置模型、检索和邮件能力。`.env` 只在本地使用，不会提交到仓库。
+复制 `.env.example` 为 `.env` 后按需修改。本地密钥、SMTP 授权码、API Key 和生成数据都不应提交到 Git。
 
-### 云端模型
-
-```bash
-set MODEL_BACKEND=cloud_api
-set OPENAI_COMPAT_BASE_URL=https://api.deepseek.com
-set OPENAI_COMPAT_CHAT_PATH=/chat/completions
-set OPENAI_COMPAT_API_KEY=your_api_key
-set OPENAI_COMPAT_MODEL=deepseek-v4-flash
-```
-
-### 本地 MiniMind 双 LoRA
+常用生产骨架配置：
 
 ```bash
-set MODEL_BACKEND=minimind_split
-set MINIMIND_STRUCTURED_BASE_URL=http://127.0.0.1:9011/v1
-set MINIMIND_REPLY_BASE_URL=http://127.0.0.1:9012/v1
+APP_ENV=development
+API_HOST=127.0.0.1
+API_PORT=8000
+DATABASE_BACKEND=sqlite
+DATABASE_URL=postgresql://ticketflow:ticketflow@localhost:5432/ticketflow
+REDIS_URL=redis://localhost:6379/0
+QDRANT_URL=http://localhost:6333
+NEO4J_URI=bolt://localhost:7687
+MINIO_ENDPOINT=http://localhost:9000
+ENABLE_PRODUCTION_SERVICES=false
 ```
 
-前端侧边栏提供本地模型控制台，可以检测、启动和停止本地结构化模型服务与回复模型服务。
-
-### RAG
-
-```bash
-set RAG_ENABLED=true
-set RAG_DB_DIR=data/generated/rag
-set RAG_TOP_K=6
-```
-
-### SMTP / MCP 邮件服务
-
-```bash
-set SMTP_HOST=smtp.qq.com
-set SMTP_PORT=587
-set SMTP_USERNAME=your_email@qq.com
-set SMTP_AUTH_CODE=your_smtp_auth_code
-set SMTP_USE_TLS=true
-set INCIDENT_EMAIL_TO=ops@example.com
-set KB_OPS_EMAIL_TO=kb@example.com
-set EMAIL_FROM_NAME=TicketFlow 工单协同平台
-```
-
-独立启动邮件 MCP 服务：
-
-```bash
-ticketflow-email-mcp
-```
-
-## 评测
-
-项目保留多类离线评测脚本，用于持续跟踪系统质量。
-
-### RAG-sensitive 专项评测
-
-```bash
-ticketflow-build-rag-sensitive-eval
-ticketflow-eval-rag-sensitive
-```
-
-关注指标包括：
-
-- 历史案例证据召回率。
-- 上下文召回率。
-- 证据充分性判断准确率。
-- 基于证据的动作正确率。
-- 工具级审批拦截准确率。
-- 回复草稿事实校验通过率。
-
-### 检索策略评测
-
-```bash
-ticketflow-eval-retrieval-strategies
-```
-
-关注指标包括：
-
-- HitRate：正确证据是否被召回。
-- MRR：第一个正确证据的平均倒数排名。
-- 错误率：检索结果未命中目标证据的比例。
-
-### 多模态工单评测
-
-```bash
-ticketflow-build-multimodal-eval
-ticketflow-eval-multimodal
-ticketflow-eval-multimodal-ablation
-```
-
-用于比较启用附件证据和禁用附件证据时，对证据召回、实体抽取和动作准确率的影响。
-
-### 测试
+## 测试
 
 ```bash
 python -m pytest -q
 ```
 
-当前测试覆盖工作流、治理、模型配置、本地模型控制、多模态证据和主要回归路径。
-
-## 前端工作台
-
-Streamlit 工作台用于本地业务运行和调试，当前包含：
-
-- 工单队列筛选。
-- 模型后端切换。
-- 本地 MiniMind 服务控制。
-- 系统运行状态卡片。
-- 证据充分性显示。
-- RAG 证据与附件证据显示。
-- 动作建议和工具调用显示。
-- 人工审批入口。
-- 回复事实校验结果。
-- 审计日志和节点原始数据。
-
-## 运维与安全边界
-
-当前系统仍属于持续迭代中的业务系统原型，默认适合本地运行、离线评测和小规模业务流程验证。
-
-- 不把 API Key、邮箱授权码、运行数据库提交到 Git。
-- 高风险动作必须经过证据充分性和工具策略控制。
-- 模型输出不直接写入业务状态，必须经过 schema 校验和治理规则。
-- 邮件发送、审批结果、工具执行结果都会进入审计日志。
-- 线上部署前需要补充权限体系、用户隔离、密钥托管、监控告警和持久化任务恢复。
-
-## 路线图
-
-下一阶段将围绕“可对话的工单运营 Agent”继续迭代：
-
-- 支持通过自然语言新增工单并自动进入工作流。
-- 支持查询工单状态、处理原因、证据链和审批结果。
-- 支持批量处理低风险工单。
-- 支持从已解决工单中沉淀知识库候选。
-- 支持运营统计，例如高频问题、超时工单、退款原因分布。
-- 引入更完整的记忆管理，用于保存用户偏好、常见业务规则和历史处理经验。
-- 强化权限控制、任务恢复和外部工具幂等保护。
-
-## 版本管理
-
-项目使用 Git 管理，每个阶段建议形成独立提交：
-
-- 基线提交：稳定可运行版本。
-- 功能提交：新增能力或接口。
-- 评测提交：新增 benchmark、报告或指标口径。
-- 文档提交：更新业务说明、部署说明和复盘材料。
-
-提交前建议执行：
+API 和 worker 骨架专项测试：
 
 ```bash
-python -m pytest -q
-git status -sb
+python -m pytest tests\test_api.py tests\test_worker.py -q
 ```
 
-确保没有 `.env`、数据库、缓存、日志和密钥进入暂存区。
+## 后续路线
+
+1. PostgreSQL repository backend。
+2. Celery + Redis 异步任务与任务状态 API。
+3. Durable HITL 审批持久化与 workflow resume。
+4. Skill Runtime 注册、权限、审计与版本回滚。
+5. Neo4j / Graphiti 风格知识图谱记忆。
+6. Production Claw Harness、轨迹记录、Pass^3 和 leaderboard。
+7. OpenTelemetry、Prometheus、Grafana、Langfuse 观测体系。
+8. Locust / k6 / worker 并发压测与稳定性报告。

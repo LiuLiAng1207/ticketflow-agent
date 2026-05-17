@@ -11,18 +11,22 @@ requires-python = ">=3.10"
 dependencies = [
   "aiosmtpd>=1.4.6",
   "chromadb>=1.1.0",
+  "fastapi>=0.115.0",
   "langgraph>=1.1.0",
   "langgraph-checkpoint-sqlite>=3.0.0",
   "mcp>=1.26.0",
+  "python-dotenv>=1.0.0",
   "pydantic>=2.7.0,<3",
   "redis>=5.0.0",
   "requests>=2.32.0",
   "streamlit>=1.40.0",
   "transformers>=4.40.0",
+  "uvicorn>=0.30.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "httpx>=0.27.0",
   "pytest>=8.0.0",
 ]
 rag-pro = [
@@ -33,6 +37,8 @@ rag-pro = [
 ticketflow-seed = "ticketflow.seed:main"
 ticketflow-eval = "ticketflow.evals:main"
 ticketflow-app = "ticketflow.app:main"
+ticketflow-api = "ticketflow.api:main"
+ticketflow-worker = "ticketflow.worker:main"
 ticketflow-demo = "ticketflow.demo:main"
 ticketflow-reset = "ticketflow.reset:main"
 ticketflow-llm-check = "ticketflow.llm_check:main"

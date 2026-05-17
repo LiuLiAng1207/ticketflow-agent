@@ -1,0 +1,170 @@
+from __future__ import annotations
+
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
+
+from .graph import TicketFlowRunner
+from .service_settings import ServiceSettings
+
+
+def _model_payload(model: Any) -> dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump(mode="json")
+    return jsonable_encoder(model)
+
+
+def _get_runner(request: Request) -> TicketFlowRunner:
+    runner = getattr(request.app.state, "runner", None)
+    if runner is None:
+        runner = TicketFlowRunner.from_project_root(
+            request.app.state.project_root,
+            overrides=request.app.state.runner_overrides,
+        )
+        request.app.state.runner = runner
+    return runner
+
+
+def _ticket_or_404(runner: TicketFlowRunner, ticket_id: str):
+    try:
+        return runner.get_ticket(ticket_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+def _summarize_result(ticket_id: str, result) -> dict[str, Any]:
+    state = result.state
+    ticket = state.get("ticket")
+    if hasattr(ticket, "model_dump"):
+        ticket_payload = ticket.model_dump(mode="json")
+    else:
+        ticket_payload = ticket
+    return {
+        "ticket_id": ticket_id,
+        "thread_id": state.get("thread_id"),
+        "interrupted": result.interrupted,
+        "interrupt_payload": result.interrupt_payload,
+        "approval_state": state.get("approval_state"),
+        "ticket": ticket_payload,
+        "state": jsonable_encoder(state),
+    }
+
+
+def _ops_summary(runner: TicketFlowRunner) -> dict[str, int]:
+    tickets = runner.list_open_tickets(limit=1000)
+    enterprise_count = sum(1 for ticket in tickets if ticket.customer_tier == "enterprise")
+    refund_count = sum(
+        1
+        for ticket in tickets
+        if ticket.expected_category == "billing_refund"
+        or "退款" in ticket.title
+        or "refund" in ticket.title.lower()
+        or "退款" in ticket.body
+        or "refund" in ticket.body.lower()
+    )
+    high_risk_count = sum(
+        1
+        for ticket in tickets
+        if ticket.customer_tier == "enterprise" or ticket.expected_category in {"billing_refund", "technical_issue"}
+    )
+    return {
+        "open_tickets": len(tickets),
+        "enterprise_tickets": enterprise_count,
+        "risk_watch_tickets": high_risk_count,
+        "refund_related_tickets": refund_count,
+    }
+
+
+def create_app(
+    project_root: str | Path | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> FastAPI:
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    service_settings = ServiceSettings.from_project_root(root)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        runner = getattr(app.state, "runner", None)
+        if runner is not None:
+            runner.close()
+            app.state.runner = None
+
+    app = FastAPI(
+        title="TicketFlow API",
+        version="0.1.0",
+        description="Production service skeleton for TicketFlow.",
+        lifespan=lifespan,
+    )
+    app.state.project_root = root
+    app.state.service_settings = service_settings
+    app.state.runner_overrides = runner_overrides
+    app.state.runner = None
+
+    @app.get("/healthz")
+    def healthz() -> dict[str, str]:
+        return {"status": "ok", "service": "ticketflow-api"}
+
+    @app.get("/readyz")
+    def readyz(request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        return service_settings.readiness_payload(sqlite_db_path=runner.settings.db_path)
+
+    @app.get("/api/v1/tickets")
+    def list_tickets(
+        request: Request,
+        limit: int = Query(default=50, ge=1, le=500),
+    ) -> dict[str, object]:
+        runner = _get_runner(request)
+        tickets = [_model_payload(ticket) for ticket in runner.list_open_tickets(limit=limit)]
+        return {"tickets": tickets, "count": len(tickets)}
+
+    @app.get("/api/v1/tickets/{ticket_id}")
+    def get_ticket(ticket_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        ticket = _ticket_or_404(runner, ticket_id)
+        return {"ticket": _model_payload(ticket)}
+
+    @app.post("/api/v1/tickets/{ticket_id}/run")
+    def run_ticket(ticket_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        _ticket_or_404(runner, ticket_id)
+        try:
+            result = runner.run_ticket(ticket_id)
+        except Exception as exc:  # pragma: no cover - exercised by integration/runtime paths.
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "error": "workflow_execution_failed",
+                    "message": str(exc),
+                    "ticket_id": ticket_id,
+                },
+            ) from exc
+        return _summarize_result(ticket_id, result)
+
+    @app.get("/api/v1/tickets/{ticket_id}/audit")
+    def list_ticket_audit(ticket_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        _ticket_or_404(runner, ticket_id)
+        events = runner.repository.list_audit_log(ticket_id=ticket_id)
+        return {"ticket_id": ticket_id, "events": events, "count": len(events)}
+
+    @app.get("/api/v1/ops/summary")
+    def ops_summary(request: Request) -> dict[str, int]:
+        runner = _get_runner(request)
+        return _ops_summary(runner)
+
+    return app
+
+
+def main() -> None:
+    settings = ServiceSettings.from_project_root()
+    uvicorn.run(
+        create_app(project_root=settings.project_root),
+        host=settings.api_host,
+        port=settings.api_port,
+    )

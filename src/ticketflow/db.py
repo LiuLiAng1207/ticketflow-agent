@@ -582,6 +582,38 @@ class TicketFlowRepository:
             conn.commit()
         return {"audit_id": cursor.lastrowid}
 
+    def list_audit_log(self, ticket_id: str, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT audit_id, ticket_id, actor, event_type, detail, payload, created_at
+                FROM audit_log
+                WHERE ticket_id = ?
+                ORDER BY audit_id ASC
+                LIMIT ?
+                """,
+                (ticket_id, limit),
+            ).fetchall()
+        events: list[dict[str, object]] = []
+        for row in rows:
+            payload_raw = row["payload"]
+            try:
+                payload = json.loads(payload_raw) if payload_raw else {}
+            except json.JSONDecodeError:
+                payload = {"raw": payload_raw}
+            events.append(
+                {
+                    "audit_id": row["audit_id"],
+                    "ticket_id": row["ticket_id"],
+                    "actor": row["actor"],
+                    "event_type": row["event_type"],
+                    "detail": row["detail"],
+                    "payload": payload,
+                    "created_at": row["created_at"],
+                }
+            )
+        return events
+
     def create_external_email_delivery(
         self,
         *,
