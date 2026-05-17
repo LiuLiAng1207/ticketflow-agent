@@ -1,0 +1,97 @@
+{
+  "sample_size": 24,
+  "hash_report": "D:\\Study\\shixi\\ticketflow\\reports\\rag_eval_hash_fused_24.json",
+  "transformers_report": "D:\\Study\\shixi\\ticketflow\\reports\\rag_eval_transformers_fused_24.json",
+  "metrics": {
+    "classification_accuracy": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "category_macro_f1": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "sla_risk_precision": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "sla_risk_recall": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "sla_risk_f1": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "action_type_accuracy": {
+      "hash_fused": 0.792,
+      "transformers_fused": 0.792,
+      "delta": 0.0
+    },
+    "approval_required_recall": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "target_status_accuracy": {
+      "hash_fused": 0.792,
+      "transformers_fused": 0.792,
+      "delta": 0.0
+    },
+    "groundedness_rate": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "policy_violation_rate": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "hallucination_rate": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "reply_supported_claim_ratio_mean": {
+      "hash_fused": 0.0,
+      "transformers_fused": 0.0,
+      "delta": 0.0
+    },
+    "reply_rubric_proxy_mean": {
+      "hash_fused": 3.858,
+      "transformers_fused": 3.7,
+      "delta": -0.158
+    },
+    "citation_grounding_rate": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "rag_policy_hit_rate": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "rag_kb_hit_rate": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "rag_history_hit_rate": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    },
+    "vector_retrieval_usage_rate": {
+      "hash_fused": 1.0,
+      "transformers_fused": 1.0,
+      "delta": 0.0
+    }
+  }
+}

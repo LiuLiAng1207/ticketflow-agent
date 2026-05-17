@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import smtplib
 from dataclasses import dataclass
+from email.header import Header
 from datetime import datetime
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
@@ -39,13 +40,13 @@ def _send_email(subject: str, text_body: str, html_body: str | None, recipients:
         raise ValueError("至少需要一个收件人。")
 
     message = EmailMessage()
-    message["Subject"] = subject
+    message["Subject"] = str(Header(subject, "utf-8"))
     message["From"] = formataddr((settings.from_name, settings.username))
     message["To"] = ", ".join(recipients)
     message["Message-ID"] = make_msgid(domain=settings.username.split("@")[-1])
-    message.set_content(text_body)
+    message.set_content(text_body, charset="utf-8", cte="base64")
     if html_body:
-        message.add_alternative(html_body, subtype="html")
+        message.add_alternative(html_body, subtype="html", charset="utf-8", cte="base64")
 
     if settings.use_tls and settings.port == 465:
         with smtplib.SMTP_SSL(settings.host, settings.port, timeout=30) as server:

@@ -7,20 +7,26 @@ name = "ticketflow"
 version = "0.1.0"
 description = "A LangGraph-powered ticket orchestration demo for customer support and IT workflows."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
   "aiosmtpd>=1.4.6",
   "chromadb>=1.1.0",
   "langgraph>=1.1.0",
+  "langgraph-checkpoint-sqlite>=3.0.0",
   "mcp>=1.26.0",
   "pydantic>=2.7.0,<3",
+  "redis>=5.0.0",
   "requests>=2.32.0",
   "streamlit>=1.40.0",
+  "transformers>=4.40.0",
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0.0",
+]
+rag-pro = [
+  "FlagEmbedding>=1.3.0",
 ]
 
 [project.scripts]
@@ -38,6 +44,12 @@ ticketflow-build-gold-structured-eval = "ticketflow.build_structured_gold_eval:m
 ticketflow-eval-structured-gold = "ticketflow.eval_structured_gold:main"
 ticketflow-build-canonical-gold = "ticketflow.build_canonical_gold:main"
 ticketflow-eval-minimind-split = "ticketflow.eval_minimind_split:main"
+ticketflow-build-rag-sensitive-eval = "ticketflow.build_rag_sensitive_eval:main"
+ticketflow-eval-rag-sensitive = "ticketflow.eval_rag_sensitive:main"
+ticketflow-eval-retrieval-strategies = "ticketflow.eval_retrieval_strategies:main"
+ticketflow-build-multimodal-eval = "ticketflow.build_multimodal_ticket_eval:main"
+ticketflow-eval-multimodal = "ticketflow.eval_multimodal_ticket:main"
+ticketflow-eval-multimodal-ablation = "ticketflow.eval_multimodal_ablation:main"
 
 [tool.setuptools.package-dir]
 "" = "src"

@@ -1,0 +1,1762 @@
+{
+  "project": "TicketFlow RAG-sensitive evaluation",
+  "eval_csv": "data/gold_eval/rag_sensitive_eval_v2.csv",
+  "sample_size": 40,
+  "cache_version": "rag_sensitive_cloud_a40_v9",
+  "cache_dir": "/export/home/gaopeng/wgp/ticketflow-a40/reports/cache/rag_sensitive",
+  "cache_context_signature": "5383c9bd64b3de8c",
+  "batch_size": 5,
+  "reports": {
+    "no_rag": {
+      "mode": "no_rag",
+      "sample_size": 40,
+      "cache_hits": 0,
+      "cache_misses": 40,
+      "total_seconds": 88.968,
+      "route_family_accuracy": 1.0,
+      "sufficiency_accuracy": 1.0,
+      "sufficiency_recall_for_high_risk": 0.0,
+      "policy_evidence_recall": 0.0,
+      "history_evidence_recall": 0.0,
+      "context_precision_at_3": 0.0,
+      "context_recall": 0.062,
+      "evidence_based_action_accuracy": 0.0,
+      "tool_approval_interception_accuracy": 0.0,
+      "reply_evidence_usage_rate": 0.2,
+      "reply_draft_fact_check_pass_rate": 0.925,
+      "reply_groundedness_before_rewrite": 0.971,
+      "reply_fact_check_pass_rate": 1.0,
+      "reply_groundedness_after_rewrite": 1.0,
+      "reply_claim_coverage_mean": 0.192,
+      "conservative_fallback_rate_without_evidence": 1.0,
+      "bad_cases": [
+        {
+          "ticket_id": "TCK-0246",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0246",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-006"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0036",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0036",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-036"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0351",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0351",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-051"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0141",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0141",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-021"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0211",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0211",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-031"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0106",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0106",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-046"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0071",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0071",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-011"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0001",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0001",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-001"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0231",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "order:order:ORD-0019"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0111",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "order:order:ORD-0064"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0096",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-036",
+            "order:order:ORD-0030"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0081",
+          "mode": "no_rag",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [],
+          "context_docs": [
+            "customer:customer:CUST-021",
+            "order:order:ORD-0012"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        }
+      ]
+    },
+    "kb_only": {
+      "mode": "kb_only",
+      "sample_size": 40,
+      "cache_hits": 0,
+      "cache_misses": 40,
+      "total_seconds": 90.279,
+      "route_family_accuracy": 1.0,
+      "sufficiency_accuracy": 1.0,
+      "sufficiency_recall_for_high_risk": 0.0,
+      "policy_evidence_recall": 0.0,
+      "history_evidence_recall": 0.0,
+      "context_precision_at_3": 0.0,
+      "context_recall": 0.062,
+      "evidence_based_action_accuracy": 0.0,
+      "tool_approval_interception_accuracy": 0.0,
+      "reply_evidence_usage_rate": 0.2,
+      "reply_draft_fact_check_pass_rate": 0.95,
+      "reply_groundedness_before_rewrite": 0.975,
+      "reply_fact_check_pass_rate": 1.0,
+      "reply_groundedness_after_rewrite": 1.0,
+      "reply_claim_coverage_mean": 0.2,
+      "conservative_fallback_rate_without_evidence": 1.0,
+      "bad_cases": [
+        {
+          "ticket_id": "TCK-0246",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0246",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-003",
+            "kb:KB-008",
+            "kb:KB-013",
+            "kb:KB-018",
+            "kb:KB-023",
+            "kb:KB-027"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-006",
+            "kb:KB-003",
+            "kb:KB-008",
+            "kb:KB-013",
+            "kb:KB-018",
+            "kb:KB-023",
+            "kb:KB-027"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0036",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0036",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-005",
+            "kb:KB-010",
+            "kb:KB-015",
+            "kb:KB-020",
+            "kb:KB-029",
+            "kb:KB-034"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-036",
+            "kb:KB-005",
+            "kb:KB-010",
+            "kb:KB-015",
+            "kb:KB-020",
+            "kb:KB-029",
+            "kb:KB-034"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0351",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0351",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0141",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0141",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-021",
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0211",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0211",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-031",
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0106",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0106",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-003",
+            "kb:KB-008",
+            "kb:KB-013",
+            "kb:KB-018",
+            "kb:KB-023",
+            "kb:KB-027"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-046",
+            "kb:KB-003",
+            "kb:KB-008",
+            "kb:KB-013",
+            "kb:KB-018",
+            "kb:KB-023",
+            "kb:KB-027"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0071",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0071",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-011",
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0001",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0001",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-001",
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order",
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0231",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028",
+            "order:order:ORD-0019"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0111",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "kb:KB-004",
+            "kb:KB-009",
+            "kb:KB-014",
+            "kb:KB-019",
+            "kb:KB-024",
+            "kb:KB-028",
+            "order:order:ORD-0064"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0096",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-005",
+            "kb:KB-010",
+            "kb:KB-015",
+            "kb:KB-020",
+            "kb:KB-029",
+            "kb:KB-034"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-036",
+            "kb:KB-005",
+            "kb:KB-010",
+            "kb:KB-015",
+            "kb:KB-020",
+            "kb:KB-029",
+            "kb:KB-034",
+            "order:order:ORD-0030"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0081",
+          "mode": "kb_only",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "kb",
+            "order"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-021",
+            "kb:KB-002",
+            "kb:KB-007",
+            "kb:KB-012",
+            "kb:KB-017",
+            "kb:KB-022",
+            "kb:KB-026",
+            "order:order:ORD-0012"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "policy"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        }
+      ]
+    },
+    "hybrid": {
+      "mode": "hybrid",
+      "sample_size": 40,
+      "cache_hits": 0,
+      "cache_misses": 40,
+      "total_seconds": 302.393,
+      "route_family_accuracy": 1.0,
+      "sufficiency_accuracy": 1.0,
+      "sufficiency_recall_for_high_risk": 1.0,
+      "policy_evidence_recall": 0.844,
+      "history_evidence_recall": 0.861,
+      "context_precision_at_3": 0.2,
+      "context_recall": 0.875,
+      "evidence_based_action_accuracy": 1.0,
+      "tool_approval_interception_accuracy": 1.0,
+      "reply_evidence_usage_rate": 0.8,
+      "reply_draft_fact_check_pass_rate": 0.9,
+      "reply_groundedness_before_rewrite": 0.931,
+      "reply_fact_check_pass_rate": 1.0,
+      "reply_groundedness_after_rewrite": 1.0,
+      "reply_claim_coverage_mean": 0.8,
+      "conservative_fallback_rate_without_evidence": 1.0,
+      "bad_cases": [
+        {
+          "ticket_id": "TCK-0036",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "policy"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0036",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0036",
+            "history:HIS-0176",
+            "history:HIS-0316",
+            "history:HIS-0336",
+            "kb:KB-010",
+            "policy:POL-001-01"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-036",
+            "history:HIS-0036",
+            "history:HIS-0176",
+            "history:HIS-0316",
+            "history:HIS-0336",
+            "kb:KB-010",
+            "policy:POL-001-01"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0351",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "policy"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0351",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0071",
+            "history:HIS-0091",
+            "history:HIS-0211",
+            "history:HIS-0251",
+            "kb:KB-004",
+            "policy:POL-002-02"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "history:HIS-0071",
+            "history:HIS-0091",
+            "history:HIS-0211",
+            "history:HIS-0251",
+            "kb:KB-004",
+            "policy:POL-002-02"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0001",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "policy"
+          ],
+          "expected_sufficient": false,
+          "required_docs": [
+            "history:HIS-0001",
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0081",
+            "history:HIS-0141",
+            "history:HIS-0261",
+            "history:HIS-0281",
+            "kb:KB-017",
+            "policy:POL-002-02"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-001",
+            "history:HIS-0081",
+            "history:HIS-0141",
+            "history:HIS-0261",
+            "history:HIS-0281",
+            "kb:KB-017",
+            "policy:POL-002-02"
+          ],
+          "predicted_action": "request_info",
+          "predicted_target_status": "waiting_on_customer",
+          "gold_action": "request_info",
+          "gold_target_status": "waiting_on_customer",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": false,
+          "missing_sources": [
+            "order"
+          ],
+          "reply_claim_coverage": 0.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0231",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "order",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0051",
+            "history:HIS-0171",
+            "history:HIS-0291",
+            "history:HIS-0331",
+            "kb:KB-004",
+            "policy:POL-001-01"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "history:HIS-0051",
+            "history:HIS-0171",
+            "history:HIS-0291",
+            "history:HIS-0331",
+            "kb:KB-004",
+            "order:order:ORD-0019",
+            "policy:POL-001-01"
+          ],
+          "predicted_action": "refund",
+          "predicted_target_status": "pending_finance",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0111",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "order",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0111",
+            "history:HIS-0171",
+            "history:HIS-0291",
+            "history:HIS-0331",
+            "kb:KB-004",
+            "policy:POL-001-01"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-051",
+            "history:HIS-0111",
+            "history:HIS-0171",
+            "history:HIS-0291",
+            "history:HIS-0331",
+            "kb:KB-004",
+            "order:order:ORD-0064",
+            "policy:POL-001-01"
+          ],
+          "predicted_action": "refund",
+          "predicted_target_status": "pending_finance",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0096",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "order",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0096",
+            "history:HIS-0156",
+            "history:HIS-0216",
+            "history:HIS-0276",
+            "kb:KB-020",
+            "policy:POL-001-01"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-036",
+            "history:HIS-0096",
+            "history:HIS-0156",
+            "history:HIS-0216",
+            "history:HIS-0276",
+            "kb:KB-020",
+            "order:order:ORD-0030",
+            "policy:POL-001-01"
+          ],
+          "predicted_action": "refund",
+          "predicted_target_status": "pending_finance",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0081",
+          "mode": "hybrid",
+          "required_sources": [
+            "order",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "order",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "policy:POL-002-02"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0021",
+            "history:HIS-0081",
+            "history:HIS-0201",
+            "history:HIS-0261",
+            "kb:KB-017",
+            "policy:POL-001-01"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-021",
+            "history:HIS-0021",
+            "history:HIS-0081",
+            "history:HIS-0201",
+            "history:HIS-0261",
+            "kb:KB-017",
+            "order:order:ORD-0012",
+            "policy:POL-001-01"
+          ],
+          "predicted_action": "refund",
+          "predicted_target_status": "pending_finance",
+          "gold_action": "refund",
+          "gold_target_status": "pending_finance",
+          "route_family": "refund_candidate",
+          "gold_route_family": "refund_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0303",
+          "mode": "hybrid",
+          "required_sources": [
+            "history",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "history:HIS-0303",
+            "policy:POL-003-03"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0003",
+            "history:HIS-0163",
+            "history:HIS-0183",
+            "history:HIS-0243",
+            "kb:KB-070",
+            "policy:POL-003-03"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-003",
+            "history:HIS-0003",
+            "history:HIS-0163",
+            "history:HIS-0183",
+            "history:HIS-0243",
+            "kb:KB-070",
+            "policy:POL-003-03"
+          ],
+          "predicted_action": "escalation",
+          "predicted_target_status": "escalated",
+          "gold_action": "escalation",
+          "gold_target_status": "escalated",
+          "route_family": "escalation_candidate",
+          "gold_route_family": "escalation_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0273",
+          "mode": "hybrid",
+          "required_sources": [
+            "history",
+            "policy"
+          ],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "order",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "history:HIS-0273",
+            "policy:POL-003-03"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0073",
+            "history:HIS-0153",
+            "history:HIS-0253",
+            "history:HIS-0333",
+            "kb:KB-070",
+            "policy:POL-003-03"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-033",
+            "history:HIS-0073",
+            "history:HIS-0153",
+            "history:HIS-0253",
+            "history:HIS-0333",
+            "kb:KB-070",
+            "order:order:ORD-0097",
+            "policy:POL-003-03"
+          ],
+          "predicted_action": "escalation",
+          "predicted_target_status": "escalated",
+          "gold_action": "escalation",
+          "gold_target_status": "escalated",
+          "route_family": "escalation_candidate",
+          "gold_route_family": "escalation_candidate",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        },
+        {
+          "ticket_id": "TCK-0240",
+          "mode": "hybrid",
+          "required_sources": [],
+          "available_sources": [
+            "customer",
+            "history",
+            "kb",
+            "policy"
+          ],
+          "expected_sufficient": true,
+          "required_docs": [
+            "history:HIS-0240"
+          ],
+          "retrieved_docs": [
+            "history:HIS-0060",
+            "history:HIS-0120",
+            "history:HIS-0300",
+            "history:HIS-0360",
+            "kb:KB-104",
+            "policy:POL-003-03"
+          ],
+          "context_docs": [
+            "customer:customer:CUST-060",
+            "history:HIS-0060",
+            "history:HIS-0120",
+            "history:HIS-0300",
+            "history:HIS-0360",
+            "kb:KB-104",
+            "policy:POL-003-03"
+          ],
+          "predicted_action": "status_update",
+          "predicted_target_status": "in_progress",
+          "gold_action": "status_update",
+          "gold_target_status": "in_progress",
+          "route_family": "standard_resolution",
+          "gold_route_family": "standard_resolution",
+          "sufficient": true,
+          "missing_sources": [],
+          "reply_claim_coverage": 1.0,
+          "reply_fact_check_passed": true
+        }
+      ]
+    }
+  },
+  "deltas": {
+    "kb_only_vs_no_rag": {
+      "route_family_accuracy": {
+        "no_rag": 1.0,
+        "kb_only": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_accuracy": {
+        "no_rag": 1.0,
+        "kb_only": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_recall_for_high_risk": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "policy_evidence_recall": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "history_evidence_recall": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "context_precision_at_3": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "context_recall": {
+        "no_rag": 0.062,
+        "kb_only": 0.062,
+        "delta": 0.0
+      },
+      "evidence_based_action_accuracy": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "tool_approval_interception_accuracy": {
+        "no_rag": 0.0,
+        "kb_only": 0.0,
+        "delta": 0.0
+      },
+      "reply_evidence_usage_rate": {
+        "no_rag": 0.2,
+        "kb_only": 0.2,
+        "delta": 0.0
+      },
+      "reply_draft_fact_check_pass_rate": {
+        "no_rag": 0.925,
+        "kb_only": 0.95,
+        "delta": 0.025
+      },
+      "reply_groundedness_before_rewrite": {
+        "no_rag": 0.971,
+        "kb_only": 0.975,
+        "delta": 0.004
+      },
+      "reply_fact_check_pass_rate": {
+        "no_rag": 1.0,
+        "kb_only": 1.0,
+        "delta": 0.0
+      },
+      "reply_groundedness_after_rewrite": {
+        "no_rag": 1.0,
+        "kb_only": 1.0,
+        "delta": 0.0
+      },
+      "reply_claim_coverage_mean": {
+        "no_rag": 0.192,
+        "kb_only": 0.2,
+        "delta": 0.008
+      },
+      "conservative_fallback_rate_without_evidence": {
+        "no_rag": 1.0,
+        "kb_only": 1.0,
+        "delta": 0.0
+      }
+    },
+    "hybrid_vs_kb_only": {
+      "route_family_accuracy": {
+        "kb_only": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_accuracy": {
+        "kb_only": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_recall_for_high_risk": {
+        "kb_only": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "policy_evidence_recall": {
+        "kb_only": 0.0,
+        "hybrid": 0.844,
+        "delta": 0.844
+      },
+      "history_evidence_recall": {
+        "kb_only": 0.0,
+        "hybrid": 0.861,
+        "delta": 0.861
+      },
+      "context_precision_at_3": {
+        "kb_only": 0.0,
+        "hybrid": 0.2,
+        "delta": 0.2
+      },
+      "context_recall": {
+        "kb_only": 0.062,
+        "hybrid": 0.875,
+        "delta": 0.813
+      },
+      "evidence_based_action_accuracy": {
+        "kb_only": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "tool_approval_interception_accuracy": {
+        "kb_only": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "reply_evidence_usage_rate": {
+        "kb_only": 0.2,
+        "hybrid": 0.8,
+        "delta": 0.6
+      },
+      "reply_draft_fact_check_pass_rate": {
+        "kb_only": 0.95,
+        "hybrid": 0.9,
+        "delta": -0.05
+      },
+      "reply_groundedness_before_rewrite": {
+        "kb_only": 0.975,
+        "hybrid": 0.931,
+        "delta": -0.044
+      },
+      "reply_fact_check_pass_rate": {
+        "kb_only": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "reply_groundedness_after_rewrite": {
+        "kb_only": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "reply_claim_coverage_mean": {
+        "kb_only": 0.2,
+        "hybrid": 0.8,
+        "delta": 0.6
+      },
+      "conservative_fallback_rate_without_evidence": {
+        "kb_only": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      }
+    },
+    "hybrid_vs_no_rag": {
+      "route_family_accuracy": {
+        "no_rag": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_accuracy": {
+        "no_rag": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "sufficiency_recall_for_high_risk": {
+        "no_rag": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "policy_evidence_recall": {
+        "no_rag": 0.0,
+        "hybrid": 0.844,
+        "delta": 0.844
+      },
+      "history_evidence_recall": {
+        "no_rag": 0.0,
+        "hybrid": 0.861,
+        "delta": 0.861
+      },
+      "context_precision_at_3": {
+        "no_rag": 0.0,
+        "hybrid": 0.2,
+        "delta": 0.2
+      },
+      "context_recall": {
+        "no_rag": 0.062,
+        "hybrid": 0.875,
+        "delta": 0.813
+      },
+      "evidence_based_action_accuracy": {
+        "no_rag": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "tool_approval_interception_accuracy": {
+        "no_rag": 0.0,
+        "hybrid": 1.0,
+        "delta": 1.0
+      },
+      "reply_evidence_usage_rate": {
+        "no_rag": 0.2,
+        "hybrid": 0.8,
+        "delta": 0.6
+      },
+      "reply_draft_fact_check_pass_rate": {
+        "no_rag": 0.925,
+        "hybrid": 0.9,
+        "delta": -0.025
+      },
+      "reply_groundedness_before_rewrite": {
+        "no_rag": 0.971,
+        "hybrid": 0.931,
+        "delta": -0.04
+      },
+      "reply_fact_check_pass_rate": {
+        "no_rag": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "reply_groundedness_after_rewrite": {
+        "no_rag": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      },
+      "reply_claim_coverage_mean": {
+        "no_rag": 0.192,
+        "hybrid": 0.8,
+        "delta": 0.608
+      },
+      "conservative_fallback_rate_without_evidence": {
+        "no_rag": 1.0,
+        "hybrid": 1.0,
+        "delta": 0.0
+      }
+    }
+  }
+}

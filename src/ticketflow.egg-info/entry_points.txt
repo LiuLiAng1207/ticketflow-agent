@@ -1,9 +1,14 @@
 [console_scripts]
 ticketflow-app = ticketflow.app:main
+ticketflow-build-canonical-gold = ticketflow.build_canonical_gold:main
 ticketflow-build-gold-structured-eval = ticketflow.build_structured_gold_eval:main
+ticketflow-build-rag-sensitive-eval = ticketflow.build_rag_sensitive_eval:main
 ticketflow-demo = ticketflow.demo:main
 ticketflow-email-mcp = ticketflow.email_mcp_server:main
 ticketflow-eval = ticketflow.evals:main
+ticketflow-eval-minimind-split = ticketflow.eval_minimind_split:main
+ticketflow-eval-rag-sensitive = ticketflow.eval_rag_sensitive:main
+ticketflow-eval-retrieval-strategies = ticketflow.eval_retrieval_strategies:main
 ticketflow-eval-structured-gold = ticketflow.eval_structured_gold:main
 ticketflow-interview-pack = ticketflow.interview_pack:main
 ticketflow-llm-check = ticketflow.llm_check:main

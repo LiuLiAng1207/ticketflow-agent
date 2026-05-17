@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -28,7 +29,10 @@ class OpenAICompatClient:
             user_prompt=user_prompt,
             response_format={"type": "json_object"},
         )
-        return json.loads(content)
+        payload = _loads_json_object(content)
+        if not isinstance(payload, dict):
+            raise ValueError("LLM JSON response must be an object")
+        return payload
 
     def chat_text(self, system_prompt: str, user_prompt: str) -> str:
         return self._chat_completion(system_prompt=system_prompt, user_prompt=user_prompt)
@@ -57,6 +61,8 @@ class OpenAICompatClient:
         }
         if response_format is not None:
             request_json["response_format"] = response_format
+            if self._is_deepseek_endpoint():
+                request_json["thinking"] = {"type": "disabled"}
 
         for attempt in range(self.max_retries + 1):
             response = requests.post(
@@ -68,7 +74,10 @@ class OpenAICompatClient:
             )
             if response.status_code not in {429, 500, 502, 503, 504}:
                 response.raise_for_status()
-                return self._extract_message_content(response.text)
+                return self._extract_message_content(
+                    response.text,
+                    allow_reasoning_content=response_format is None,
+                )
 
             if attempt >= self.max_retries:
                 response.raise_for_status()
@@ -85,7 +94,10 @@ class OpenAICompatClient:
 
         raise RuntimeError("Unreachable retry loop exit in OpenAICompatClient._chat_completion")
 
-    def _extract_message_content(self, raw_text: str) -> str:
+    def _is_deepseek_endpoint(self) -> bool:
+        return "deepseek" in self.base_url.lower() or self.model.lower().startswith("deepseek")
+
+    def _extract_message_content(self, raw_text: str, *, allow_reasoning_content: bool = True) -> str:
         raw_text = raw_text.strip()
         if not raw_text:
             raise ValueError("LLM 返回了空响应。")
@@ -103,7 +115,7 @@ class OpenAICompatClient:
                 delta = payload.get("choices", [{}])[0].get("delta", {})
                 if delta.get("content"):
                     chunks.append(str(delta["content"]))
-                elif delta.get("reasoning_content"):
+                elif allow_reasoning_content and delta.get("reasoning_content"):
                     chunks.append(str(delta["reasoning_content"]))
             content = "".join(chunks).strip()
             if not content:
@@ -117,7 +129,30 @@ class OpenAICompatClient:
             return content.strip()
 
         reasoning = message.get("reasoning_content")
-        if isinstance(reasoning, str) and reasoning.strip():
+        if allow_reasoning_content and isinstance(reasoning, str) and reasoning.strip():
             return reasoning.strip()
 
         raise ValueError("LLM 返回中没有可用的 content。")
+
+
+def _loads_json_object(content: str) -> Any:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        stripped = _strip_markdown_fence(content)
+        if stripped != content:
+            try:
+                return json.loads(stripped)
+            except json.JSONDecodeError:
+                pass
+        match = re.search(r"\{.*\}", stripped, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        raise
+
+
+def _strip_markdown_fence(content: str) -> str:
+    stripped = content.strip()
+    stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
+    stripped = re.sub(r"\s*```$", "", stripped)
+    return stripped.strip()

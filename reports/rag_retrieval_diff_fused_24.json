@@ -1,0 +1,159 @@
+{
+  "sample_size": 24,
+  "changed_ticket_count": 24,
+  "changed_ticket_rate": 1.0,
+  "examples": [
+    {
+      "ticket_id": "TCK-0007",
+      "hash": [
+        "policy:POL-006-06",
+        "kb:KB-026",
+        "history:HIS-0012",
+        "history:HIS-0122",
+        "history:HIS-0072",
+        "history:HIS-0192"
+      ],
+      "transformers": [
+        "policy:POL-006-06",
+        "kb:KB-026",
+        "history:HIS-0242",
+        "history:HIS-0052",
+        "history:HIS-0302",
+        "history:HIS-0332"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0295",
+      "hash": [
+        "policy:POL-001-01",
+        "kb:KB-099",
+        "history:HIS-0010",
+        "history:HIS-0270",
+        "history:HIS-0040",
+        "history:HIS-0140"
+      ],
+      "transformers": [
+        "policy:POL-001-01",
+        "kb:KB-099",
+        "history:HIS-0060",
+        "history:HIS-0250",
+        "history:HIS-0040",
+        "history:HIS-0230"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0199",
+      "hash": [
+        "policy:POL-001-01",
+        "kb:KB-077",
+        "history:HIS-0044",
+        "kb:KB-053",
+        "history:HIS-0024",
+        "kb:KB-087"
+      ],
+      "transformers": [
+        "policy:POL-001-01",
+        "kb:KB-082",
+        "history:HIS-0294",
+        "history:HIS-0044",
+        "history:HIS-0024",
+        "history:HIS-0054"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0103",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-084",
+        "history:HIS-0048",
+        "history:HIS-0058",
+        "history:HIS-0038",
+        "kb:KB-060"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-050",
+        "history:HIS-0358",
+        "history:HIS-0178",
+        "history:HIS-0058",
+        "history:HIS-0098"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0008",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-060",
+        "history:HIS-0028",
+        "kb:KB-012",
+        "kb:KB-050",
+        "kb:KB-065"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-050",
+        "history:HIS-0128",
+        "history:HIS-0008",
+        "history:HIS-0028",
+        "history:HIS-0148"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0296",
+      "hash": [
+        "policy:POL-002-02",
+        "kb:KB-005",
+        "history:HIS-0026",
+        "history:HIS-0186",
+        "history:HIS-0046",
+        "history:HIS-0356"
+      ],
+      "transformers": [
+        "policy:POL-002-02",
+        "kb:KB-005",
+        "history:HIS-0116",
+        "history:HIS-0026",
+        "history:HIS-0306",
+        "history:HIS-0196"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0200",
+      "hash": [
+        "policy:POL-002-02",
+        "kb:KB-099",
+        "history:HIS-0010",
+        "history:HIS-0280",
+        "history:HIS-0040",
+        "history:HIS-0290"
+      ],
+      "transformers": [
+        "policy:POL-002-02",
+        "kb:KB-099",
+        "history:HIS-0250",
+        "history:HIS-0040",
+        "history:HIS-0060",
+        "history:HIS-0340"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0104",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-082",
+        "history:HIS-0044",
+        "history:HIS-0054",
+        "kb:KB-039",
+        "history:HIS-0024"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-082",
+        "history:HIS-0294",
+        "history:HIS-0024",
+        "history:HIS-0054",
+        "history:HIS-0274"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "sample_size": 24,
+  "hash_report": "D:\\Study\\shixi\\ticketflow\\reports\\rag_eval_hash_24.json",
+  "transformers_report": "D:\\Study\\shixi\\ticketflow\\reports\\rag_eval_transformers_24.json",
+  "metrics": {
+    "classification_accuracy": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "category_macro_f1": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "sla_risk_precision": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "sla_risk_recall": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "sla_risk_f1": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "action_type_accuracy": {
+      "hash": 0.792,
+      "transformers": 0.792,
+      "delta": 0.0
+    },
+    "approval_required_recall": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "target_status_accuracy": {
+      "hash": 0.792,
+      "transformers": 0.792,
+      "delta": 0.0
+    },
+    "groundedness_rate": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "policy_violation_rate": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "hallucination_rate": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "reply_supported_claim_ratio_mean": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "reply_rubric_proxy_mean": {
+      "hash": 3.617,
+      "transformers": 3.7,
+      "delta": 0.083
+    },
+    "citation_grounding_rate": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "rag_policy_hit_rate": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "rag_kb_hit_rate": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "rag_history_hit_rate": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "vector_retrieval_usage_rate": {
+      "hash": 1.0,
+      "transformers": 1.0,
+      "delta": 0.0
+    },
+    "incident_email_success_rate": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    },
+    "kb_candidate_success_rate": {
+      "hash": 0.0,
+      "transformers": 0.0,
+      "delta": 0.0
+    }
+  }
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import random
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -426,6 +427,7 @@ def build_seed_dataset(seed_dir: Path, *, random_seed: int = 7) -> None:
     refundable_orders = [order for order in orders if order["eligible_for_refund"] == "true"]
     tickets: list[dict[str, object]] = []
     histories: list[dict[str, object]] = []
+    attachments: list[dict[str, object]] = []
     category_offsets = {category: 0 for category in CATEGORY_SEQUENCE}
 
     for idx in range(360):
@@ -483,6 +485,55 @@ def build_seed_dataset(seed_dir: Path, *, random_seed: int = 7) -> None:
                 "source_body": source_row["source_body"],
             }
         )
+        ticket_id = f"TCK-{idx + 1:04d}"
+        if category == "billing_refund" and idx in {0, 5}:
+            attachments.append(
+                {
+                    "attachment_id": f"ATT-SEED-{idx + 1:04d}",
+                    "ticket_id": ticket_id,
+                    "filename": "payment_success.png",
+                    "file_type": "image",
+                    "source_dataset": "synthetic_sroie_cord_style",
+                    "storage_path": "",
+                    "content_hash": f"seed-payment-{idx + 1:04d}",
+                    "ocr_text": f"支付成功 订单号 {order['order_id']} 金额 {order['amount']} 元",
+                    "visual_summary": "付款截图显示客户已经完成支付，适合作为退款诉求的辅助证据。",
+                    "metadata": json.dumps({"public_source": "SROIE/CORD-style receipt simulation"}, ensure_ascii=False),
+                    "parse_status": "pending",
+                }
+            )
+        elif category == "technical_issue" and idx == 2:
+            attachments.append(
+                {
+                    "attachment_id": f"ATT-SEED-{idx + 1:04d}",
+                    "ticket_id": ticket_id,
+                    "filename": "service_unavailable_screenshot.png",
+                    "file_type": "image",
+                    "source_dataset": "synthetic_rico_style",
+                    "storage_path": "",
+                    "content_hash": f"seed-error-{idx + 1:04d}",
+                    "ocr_text": "Error 503 Service Unavailable 高级会员服务 页面无法加载",
+                    "visual_summary": "报错截图显示服务不可用，页面提示 503。",
+                    "metadata": json.dumps({"public_source": "RICO-style UI screenshot simulation"}, ensure_ascii=False),
+                    "parse_status": "pending",
+                }
+            )
+        elif category == "general_inquiry" and idx == 4:
+            attachments.append(
+                {
+                    "attachment_id": f"ATT-SEED-{idx + 1:04d}",
+                    "ticket_id": ticket_id,
+                    "filename": "support_form.pdf",
+                    "file_type": "pdf",
+                    "source_dataset": "synthetic_docvqa_funsd_style",
+                    "storage_path": "",
+                    "content_hash": f"seed-form-{idx + 1:04d}",
+                    "ocr_text": "服务申请表 产品 高级会员服务 日期 2026-03-30 处理时限 2 个工作日",
+                    "visual_summary": "PDF 表单包含产品、日期和处理时限字段，可作为咨询类工单附件证据。",
+                    "metadata": json.dumps({"public_source": "DocVQA/FUNSD-style document simulation"}, ensure_ascii=False),
+                    "parse_status": "pending",
+                }
+            )
         histories.append(
             {
                 "event_id": f"HIS-{idx + 1:04d}",
@@ -506,6 +557,8 @@ def build_seed_dataset(seed_dir: Path, *, random_seed: int = 7) -> None:
     _write_rows(seed_dir / "reply_templates.csv", list(reply_templates[0].keys()), reply_templates)
     _write_rows(seed_dir / "tickets.csv", list(tickets[0].keys()), tickets)
     _write_rows(seed_dir / "ticket_history.csv", list(histories[0].keys()), histories)
+    if attachments:
+        _write_rows(seed_dir / "ticket_attachments.csv", list(attachments[0].keys()), attachments)
 
 
 def main() -> None:

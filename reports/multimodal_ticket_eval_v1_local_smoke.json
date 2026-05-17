@@ -1,0 +1,342 @@
+{
+  "dataset": "multimodal_ticket_eval_v1",
+  "dataset_path": "data\\eval\\multimodal_ticket_eval_v1.csv",
+  "sample_count": 10,
+  "by_case_type": {
+    "payment_verified": 10
+  },
+  "metrics": {
+    "attachment_entity_accuracy": 1.0,
+    "attachment_evidence_mrr": 1.0,
+    "attachment_parse_success": 1.0,
+    "evidence_based_action_accuracy": 1.0,
+    "low_confidence_attachment_rate": 0.0,
+    "multimodal_evidence_recall": 1.0,
+    "sufficiency_accuracy": 1.0,
+    "tool_approval_interception_accuracy": 1.0,
+    "attachment_parse_success_rate": 1.0
+  },
+  "samples": [
+    {
+      "sample_id": "MMT-0001",
+      "ticket_id": "TCK-0291",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0004"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0004",
+        "amount": 317.5,
+        "error_code": "ORD-0004"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0002",
+      "ticket_id": "TCK-0196",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0095"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0095",
+        "amount": 317.5,
+        "error_code": "ORD-0095"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0003",
+      "ticket_id": "TCK-0101",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 673.0,
+        "order_id": "ORD-0052"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0052",
+        "amount": 673.0,
+        "error_code": "ORD-0052"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0004",
+      "ticket_id": "TCK-0006",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 475.5,
+        "order_id": "ORD-0008"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0008",
+        "amount": 475.5,
+        "error_code": "ORD-0008"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0005",
+      "ticket_id": "TCK-0296",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0010"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0010",
+        "amount": 554.5,
+        "error_code": "ORD-0010"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0006",
+      "ticket_id": "TCK-0201",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 594.0,
+        "order_id": "ORD-0102"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0102",
+        "amount": 594.0,
+        "error_code": "ORD-0102"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0007",
+      "ticket_id": "TCK-0011",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0014"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0014",
+        "amount": 199.0,
+        "error_code": "ORD-0014"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0008",
+      "ticket_id": "TCK-0301",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0017"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0017",
+        "amount": 317.5,
+        "error_code": "ORD-0017"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0009",
+      "ticket_id": "TCK-0206",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0108"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0108",
+        "amount": 317.5,
+        "error_code": "ORD-0108"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0010",
+      "ticket_id": "TCK-0111",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 633.5,
+        "order_id": "ORD-0064"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0064",
+        "amount": 633.5,
+        "error_code": "ORD-0064"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    }
+  ],
+  "notes": "Attachment evidence is auxiliary; high-risk actions still require core policy/order/history evidence."
+}

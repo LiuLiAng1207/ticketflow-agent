@@ -7,12 +7,17 @@ Description-Content-Type: text/markdown
 Requires-Dist: aiosmtpd>=1.4.6
 Requires-Dist: chromadb>=1.1.0
 Requires-Dist: langgraph>=1.1.0
+Requires-Dist: langgraph-checkpoint-sqlite>=3.0.0
 Requires-Dist: mcp>=1.26.0
 Requires-Dist: pydantic<3,>=2.7.0
+Requires-Dist: redis>=5.0.0
 Requires-Dist: requests>=2.32.0
 Requires-Dist: streamlit>=1.40.0
+Requires-Dist: transformers>=4.40.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
+Provides-Extra: rag-pro
+Requires-Dist: FlagEmbedding>=1.3.0; extra == "rag-pro"
 
 # TicketFlow
 

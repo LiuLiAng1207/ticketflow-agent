@@ -1,0 +1,5942 @@
+{
+  "dataset": "multimodal_ticket_eval_v1",
+  "dataset_path": "data/eval/multimodal_ticket_eval_v1.csv",
+  "sample_count": 200,
+  "by_case_type": {
+    "payment_verified": 61,
+    "payment_unverified": 11,
+    "error_screenshot": 48,
+    "account_screenshot": 40,
+    "document_form": 40
+  },
+  "metrics": {
+    "attachment_entity_accuracy": 0.772,
+    "attachment_evidence_mrr": 1.0,
+    "attachment_parse_success": 1.0,
+    "conservative_fallback_rate_without_evidence": 1.0,
+    "evidence_based_action_accuracy": 0.82,
+    "low_confidence_attachment_rate": 0.0,
+    "multimodal_evidence_recall": 1.0,
+    "reply_fact_check_pass_rate": 1.0,
+    "sufficiency_accuracy": 1.0,
+    "tool_approval_interception_accuracy": 0.84,
+    "attachment_parse_success_rate": 1.0
+  },
+  "samples": [
+    {
+      "sample_id": "MMT-0001",
+      "ticket_id": "TCK-0291",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0004"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0004",
+        "amount": 317.5,
+        "error_code": "ORD-0004"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0002",
+      "ticket_id": "TCK-0196",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0095"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0095",
+        "amount": 317.5,
+        "error_code": "ORD-0095"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0003",
+      "ticket_id": "TCK-0101",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 673.0,
+        "order_id": "ORD-0052"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0052",
+        "amount": 673.0,
+        "error_code": "ORD-0052"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0004",
+      "ticket_id": "TCK-0006",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 475.5,
+        "order_id": "ORD-0008"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0008",
+        "amount": 475.5,
+        "error_code": "ORD-0008"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0005",
+      "ticket_id": "TCK-0296",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0010"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0010",
+        "amount": 554.5,
+        "error_code": "ORD-0010"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0006",
+      "ticket_id": "TCK-0201",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 594.0,
+        "order_id": "ORD-0102"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0102",
+        "amount": 594.0,
+        "error_code": "ORD-0102"
+      },
+      "actual_action": [
+        "refund",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0007",
+      "ticket_id": "TCK-0011",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0014"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0014",
+        "amount": 199.0,
+        "error_code": "ORD-0014"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0008",
+      "ticket_id": "TCK-0301",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0017"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0017",
+        "amount": 317.5,
+        "error_code": "ORD-0017"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0009",
+      "ticket_id": "TCK-0206",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0108"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0108",
+        "amount": 317.5,
+        "error_code": "ORD-0108"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0010",
+      "ticket_id": "TCK-0111",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 633.5,
+        "order_id": "ORD-0064"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0064",
+        "amount": 633.5,
+        "error_code": "ORD-0064"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0011",
+      "ticket_id": "TCK-0016",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 436.0,
+        "order_id": "ORD-0020"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0020",
+        "amount": 436.0,
+        "error_code": "ORD-0020"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0012",
+      "ticket_id": "TCK-0306",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0023"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0023",
+        "amount": 554.5,
+        "error_code": "ORD-0023"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0013",
+      "ticket_id": "TCK-0116",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 357.0,
+        "order_id": "ORD-0070"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0070",
+        "amount": 357.0,
+        "error_code": "ORD-0070"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0014",
+      "ticket_id": "TCK-0021",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0027"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0027",
+        "amount": 199.0,
+        "error_code": "ORD-0027"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0015",
+      "ticket_id": "TCK-0311",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0029"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0029",
+        "amount": 278.0,
+        "error_code": "ORD-0029"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0016",
+      "ticket_id": "TCK-0216",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0120"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0120",
+        "amount": 278.0,
+        "error_code": "ORD-0120"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0017",
+      "ticket_id": "TCK-0121",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0092"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0092",
+        "amount": 199.0,
+        "error_code": "ORD-0092"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0018",
+      "ticket_id": "TCK-0026",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0048"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0048",
+        "amount": 515.0,
+        "error_code": "ORD-0048"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0019",
+      "ticket_id": "TCK-0221",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 436.0,
+        "order_id": "ORD-0007"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0007",
+        "amount": 436.0,
+        "error_code": "ORD-0007"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0020",
+      "ticket_id": "TCK-0126",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 436.0,
+        "order_id": "ORD-0098"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0098",
+        "amount": 436.0,
+        "error_code": "ORD-0098"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0021",
+      "ticket_id": "TCK-0031",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 238.5,
+        "order_id": "ORD-0054"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0054",
+        "amount": 238.5,
+        "error_code": "ORD-0054"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0022",
+      "ticket_id": "TCK-0321",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 357.0,
+        "order_id": "ORD-0057"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0057",
+        "amount": 357.0,
+        "error_code": "ORD-0057"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0023",
+      "ticket_id": "TCK-0226",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 673.0,
+        "order_id": "ORD-0013"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0013",
+        "amount": 673.0,
+        "error_code": "ORD-0013"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0024",
+      "ticket_id": "TCK-0131",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 673.0,
+        "order_id": "ORD-0104"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0104",
+        "amount": 673.0,
+        "error_code": "ORD-0104"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0025",
+      "ticket_id": "TCK-0326",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 594.0,
+        "order_id": "ORD-0063"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0063",
+        "amount": 594.0,
+        "error_code": "ORD-0063"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0026",
+      "ticket_id": "TCK-0231",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 396.5,
+        "order_id": "ORD-0019"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0019",
+        "amount": 396.5,
+        "error_code": "ORD-0019"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0027",
+      "ticket_id": "TCK-0136",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 396.5,
+        "order_id": "ORD-0110"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0110",
+        "amount": 396.5,
+        "error_code": "ORD-0110"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0028",
+      "ticket_id": "TCK-0041",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 238.5,
+        "order_id": "ORD-0067"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0067",
+        "amount": 238.5,
+        "error_code": "ORD-0067"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0029",
+      "ticket_id": "TCK-0331",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0069"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0069",
+        "amount": 317.5,
+        "error_code": "ORD-0069"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0030",
+      "ticket_id": "TCK-0236",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 633.5,
+        "order_id": "ORD-0025"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0025",
+        "amount": 633.5,
+        "error_code": "ORD-0025"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0031",
+      "ticket_id": "TCK-0046",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 475.5,
+        "order_id": "ORD-0073"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0073",
+        "amount": 475.5,
+        "error_code": "ORD-0073"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0032",
+      "ticket_id": "TCK-0336",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0075"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0075",
+        "amount": 554.5,
+        "error_code": "ORD-0075"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0033",
+      "ticket_id": "TCK-0241",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 475.5,
+        "order_id": "ORD-0047"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0047",
+        "amount": 475.5,
+        "error_code": "ORD-0047"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0034",
+      "ticket_id": "TCK-0146",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0003"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0003",
+        "amount": 278.0,
+        "error_code": "ORD-0003"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0035",
+      "ticket_id": "TCK-0051",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0094"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0094",
+        "amount": 278.0,
+        "error_code": "ORD-0094"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0036",
+      "ticket_id": "TCK-0341",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 396.5,
+        "order_id": "ORD-0097"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0097",
+        "amount": 396.5,
+        "error_code": "ORD-0097"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0037",
+      "ticket_id": "TCK-0151",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0009"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0009",
+        "amount": 515.0,
+        "error_code": "ORD-0009"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0038",
+      "ticket_id": "TCK-0056",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0100"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0100",
+        "amount": 515.0,
+        "error_code": "ORD-0100"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0039",
+      "ticket_id": "TCK-0346",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 633.5,
+        "order_id": "ORD-0103"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0103",
+        "amount": 633.5,
+        "error_code": "ORD-0103"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0040",
+      "ticket_id": "TCK-0251",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 436.0,
+        "order_id": "ORD-0059"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0059",
+        "amount": 436.0,
+        "error_code": "ORD-0059"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0041",
+      "ticket_id": "TCK-0001",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0041"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0042",
+      "ticket_id": "TCK-0106",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0042"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0043",
+      "ticket_id": "TCK-0211",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0043"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0044",
+      "ticket_id": "TCK-0316",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0044"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0045",
+      "ticket_id": "TCK-0036",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0045"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0046",
+      "ticket_id": "TCK-0141",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0046"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0047",
+      "ticket_id": "TCK-0246",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0047"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0048",
+      "ticket_id": "TCK-0351",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0048"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0049",
+      "ticket_id": "TCK-0071",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0049"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0050",
+      "ticket_id": "TCK-0176",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0050"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0051",
+      "ticket_id": "TCK-0281",
+      "case_type": "payment_unverified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 299.0,
+        "order_id": "ORD-UNVERIFIED-0051"
+      },
+      "actual_entities": {
+        "amount": 299.0
+      },
+      "actual_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "expected_action": [
+        "request_info",
+        "waiting_on_customer"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": false,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.5
+    },
+    {
+      "sample_id": "MMT-0052",
+      "ticket_id": "TCK-0193",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0053",
+      "ticket_id": "TCK-0098",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0054",
+      "ticket_id": "TCK-0003",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0055",
+      "ticket_id": "TCK-0293",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0056",
+      "ticket_id": "TCK-0198",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0057",
+      "ticket_id": "TCK-0103",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0058",
+      "ticket_id": "TCK-0008",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0059",
+      "ticket_id": "TCK-0298",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0060",
+      "ticket_id": "TCK-0203",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0061",
+      "ticket_id": "TCK-0108",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0062",
+      "ticket_id": "TCK-0013",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0063",
+      "ticket_id": "TCK-0303",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0064",
+      "ticket_id": "TCK-0208",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0065",
+      "ticket_id": "TCK-0113",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0066",
+      "ticket_id": "TCK-0018",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0067",
+      "ticket_id": "TCK-0308",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0068",
+      "ticket_id": "TCK-0213",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0069",
+      "ticket_id": "TCK-0118",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0070",
+      "ticket_id": "TCK-0023",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0071",
+      "ticket_id": "TCK-0313",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0072",
+      "ticket_id": "TCK-0218",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0073",
+      "ticket_id": "TCK-0123",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0074",
+      "ticket_id": "TCK-0028",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0075",
+      "ticket_id": "TCK-0318",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0076",
+      "ticket_id": "TCK-0223",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0077",
+      "ticket_id": "TCK-0128",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0078",
+      "ticket_id": "TCK-0033",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0079",
+      "ticket_id": "TCK-0323",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0080",
+      "ticket_id": "TCK-0228",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0081",
+      "ticket_id": "TCK-0133",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0082",
+      "ticket_id": "TCK-0038",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0083",
+      "ticket_id": "TCK-0328",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0084",
+      "ticket_id": "TCK-0233",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0085",
+      "ticket_id": "TCK-0138",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0086",
+      "ticket_id": "TCK-0043",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0087",
+      "ticket_id": "TCK-0333",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0088",
+      "ticket_id": "TCK-0238",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0089",
+      "ticket_id": "TCK-0143",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0090",
+      "ticket_id": "TCK-0048",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0091",
+      "ticket_id": "TCK-0338",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0092",
+      "ticket_id": "TCK-0289",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0093",
+      "ticket_id": "TCK-0194",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0094",
+      "ticket_id": "TCK-0099",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0095",
+      "ticket_id": "TCK-0004",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0096",
+      "ticket_id": "TCK-0294",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0097",
+      "ticket_id": "TCK-0199",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0098",
+      "ticket_id": "TCK-0104",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0099",
+      "ticket_id": "TCK-0009",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0100",
+      "ticket_id": "TCK-0299",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0101",
+      "ticket_id": "TCK-0204",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0102",
+      "ticket_id": "TCK-0109",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0103",
+      "ticket_id": "TCK-0014",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0104",
+      "ticket_id": "TCK-0304",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0105",
+      "ticket_id": "TCK-0209",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0106",
+      "ticket_id": "TCK-0114",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0107",
+      "ticket_id": "TCK-0019",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0108",
+      "ticket_id": "TCK-0309",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0109",
+      "ticket_id": "TCK-0214",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0110",
+      "ticket_id": "TCK-0119",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0111",
+      "ticket_id": "TCK-0024",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0112",
+      "ticket_id": "TCK-0314",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "status_update",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0113",
+      "ticket_id": "TCK-0219",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0114",
+      "ticket_id": "TCK-0124",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0115",
+      "ticket_id": "TCK-0029",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "status_update",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0116",
+      "ticket_id": "TCK-0319",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0117",
+      "ticket_id": "TCK-0224",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0118",
+      "ticket_id": "TCK-0129",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0119",
+      "ticket_id": "TCK-0034",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0120",
+      "ticket_id": "TCK-0324",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0121",
+      "ticket_id": "TCK-0229",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0122",
+      "ticket_id": "TCK-0134",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0123",
+      "ticket_id": "TCK-0039",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0124",
+      "ticket_id": "TCK-0329",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0125",
+      "ticket_id": "TCK-0234",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0126",
+      "ticket_id": "TCK-0139",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0127",
+      "ticket_id": "TCK-0044",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0128",
+      "ticket_id": "TCK-0334",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0129",
+      "ticket_id": "TCK-0239",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0130",
+      "ticket_id": "TCK-0144",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0131",
+      "ticket_id": "TCK-0049",
+      "case_type": "account_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_entities": {
+        "error_code": "MFA-401"
+      },
+      "actual_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0132",
+      "ticket_id": "TCK-0290",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0133",
+      "ticket_id": "TCK-0195",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0134",
+      "ticket_id": "TCK-0100",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0135",
+      "ticket_id": "TCK-0005",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0136",
+      "ticket_id": "TCK-0295",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0137",
+      "ticket_id": "TCK-0200",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0138",
+      "ticket_id": "TCK-0105",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0139",
+      "ticket_id": "TCK-0010",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0140",
+      "ticket_id": "TCK-0300",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0141",
+      "ticket_id": "TCK-0205",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0142",
+      "ticket_id": "TCK-0110",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0143",
+      "ticket_id": "TCK-0015",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0144",
+      "ticket_id": "TCK-0305",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0145",
+      "ticket_id": "TCK-0210",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0146",
+      "ticket_id": "TCK-0115",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0147",
+      "ticket_id": "TCK-0020",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0148",
+      "ticket_id": "TCK-0310",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0149",
+      "ticket_id": "TCK-0215",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0150",
+      "ticket_id": "TCK-0120",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0151",
+      "ticket_id": "TCK-0025",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0152",
+      "ticket_id": "TCK-0315",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0153",
+      "ticket_id": "TCK-0220",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0154",
+      "ticket_id": "TCK-0125",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0155",
+      "ticket_id": "TCK-0030",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0156",
+      "ticket_id": "TCK-0320",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0157",
+      "ticket_id": "TCK-0225",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0158",
+      "ticket_id": "TCK-0130",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0159",
+      "ticket_id": "TCK-0035",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0160",
+      "ticket_id": "TCK-0325",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0161",
+      "ticket_id": "TCK-0230",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0162",
+      "ticket_id": "TCK-0135",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0163",
+      "ticket_id": "TCK-0040",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0164",
+      "ticket_id": "TCK-0330",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0165",
+      "ticket_id": "TCK-0235",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0166",
+      "ticket_id": "TCK-0140",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0167",
+      "ticket_id": "TCK-0045",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0168",
+      "ticket_id": "TCK-0335",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0169",
+      "ticket_id": "TCK-0240",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0170",
+      "ticket_id": "TCK-0145",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0171",
+      "ticket_id": "TCK-0050",
+      "case_type": "document_form",
+      "expected_evidence_type": "document_form",
+      "expected_entities": {
+        "processing_days": "2"
+      },
+      "actual_entities": {},
+      "actual_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "expected_action": [
+        "status_update",
+        "in_progress"
+      ],
+      "interrupted_for_approval": false,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 0.0
+    },
+    {
+      "sample_id": "MMT-0172",
+      "ticket_id": "TCK-0156",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 238.5,
+        "order_id": "ORD-0015"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0015",
+        "amount": 238.5,
+        "error_code": "ORD-0015"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0173",
+      "ticket_id": "TCK-0061",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0107"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0107",
+        "amount": 278.0,
+        "error_code": "ORD-0107"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0174",
+      "ticket_id": "TCK-0256",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 673.0,
+        "order_id": "ORD-0065"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0065",
+        "amount": 673.0,
+        "error_code": "ORD-0065"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0175",
+      "ticket_id": "TCK-0161",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0022"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0022",
+        "amount": 515.0,
+        "error_code": "ORD-0022"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0176",
+      "ticket_id": "TCK-0066",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0113"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0113",
+        "amount": 515.0,
+        "error_code": "ORD-0113"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0177",
+      "ticket_id": "TCK-0356",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 594.0,
+        "order_id": "ORD-0115"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0115",
+        "amount": 594.0,
+        "error_code": "ORD-0115"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0178",
+      "ticket_id": "TCK-0261",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 436.0,
+        "order_id": "ORD-0072"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0072",
+        "amount": 436.0,
+        "error_code": "ORD-0072"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0179",
+      "ticket_id": "TCK-0166",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 238.5,
+        "order_id": "ORD-0028"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0028",
+        "amount": 238.5,
+        "error_code": "ORD-0028"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0180",
+      "ticket_id": "TCK-0266",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 238.5,
+        "order_id": "ORD-0093"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0093",
+        "amount": 238.5,
+        "error_code": "ORD-0093"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0181",
+      "ticket_id": "TCK-0171",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0049"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0049",
+        "amount": 554.5,
+        "error_code": "ORD-0049"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0182",
+      "ticket_id": "TCK-0076",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 357.0,
+        "order_id": "ORD-0005"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0005",
+        "amount": 357.0,
+        "error_code": "ORD-0005"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0183",
+      "ticket_id": "TCK-0271",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 475.5,
+        "order_id": "ORD-0099"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0099",
+        "amount": 475.5,
+        "error_code": "ORD-0099"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0184",
+      "ticket_id": "TCK-0081",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 633.5,
+        "order_id": "ORD-0012"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0012",
+        "amount": 633.5,
+        "error_code": "ORD-0012"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0185",
+      "ticket_id": "TCK-0276",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0105"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0105",
+        "amount": 199.0,
+        "error_code": "ORD-0105"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0186",
+      "ticket_id": "TCK-0181",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 554.5,
+        "order_id": "ORD-0062"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0062",
+        "amount": 554.5,
+        "error_code": "ORD-0062"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0187",
+      "ticket_id": "TCK-0086",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 357.0,
+        "order_id": "ORD-0018"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0018",
+        "amount": 357.0,
+        "error_code": "ORD-0018"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0188",
+      "ticket_id": "TCK-0186",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 278.0,
+        "order_id": "ORD-0068"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0068",
+        "amount": 278.0,
+        "error_code": "ORD-0068"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0189",
+      "ticket_id": "TCK-0091",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 594.0,
+        "order_id": "ORD-0024"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0024",
+        "amount": 594.0,
+        "error_code": "ORD-0024"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0190",
+      "ticket_id": "TCK-0286",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 199.0,
+        "order_id": "ORD-0118"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0118",
+        "amount": 199.0,
+        "error_code": "ORD-0118"
+      },
+      "actual_action": [
+        "refund",
+        "pending_human"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0191",
+      "ticket_id": "TCK-0191",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 515.0,
+        "order_id": "ORD-0074"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0074",
+        "amount": 515.0,
+        "error_code": "ORD-0074"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0192",
+      "ticket_id": "TCK-0096",
+      "case_type": "payment_verified",
+      "expected_evidence_type": "payment_screenshot",
+      "expected_entities": {
+        "amount": 317.5,
+        "order_id": "ORD-0030"
+      },
+      "actual_entities": {
+        "order_id": "ORD-0030",
+        "amount": 317.5,
+        "error_code": "ORD-0030"
+      },
+      "actual_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "expected_action": [
+        "refund",
+        "pending_finance"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0193",
+      "ticket_id": "TCK-0243",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0194",
+      "ticket_id": "TCK-0148",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0195",
+      "ticket_id": "TCK-0053",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0196",
+      "ticket_id": "TCK-0343",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0197",
+      "ticket_id": "TCK-0248",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0198",
+      "ticket_id": "TCK-0153",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0199",
+      "ticket_id": "TCK-0058",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "troubleshoot",
+        "investigating"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    },
+    {
+      "sample_id": "MMT-0200",
+      "ticket_id": "TCK-0348",
+      "case_type": "error_screenshot",
+      "expected_evidence_type": "error_screenshot",
+      "expected_entities": {
+        "error_code": "503"
+      },
+      "actual_entities": {
+        "error_code": "503"
+      },
+      "actual_action": [
+        "escalation",
+        "escalated"
+      ],
+      "expected_action": [
+        "escalation",
+        "escalated"
+      ],
+      "interrupted_for_approval": true,
+      "sufficiency": true,
+      "multimodal_metrics": {
+        "attachment_parse_success": 1.0,
+        "multimodal_evidence_recall": 1.0,
+        "attachment_evidence_mrr": 1.0,
+        "low_confidence_attachment_rate": 0.0
+      },
+      "entity_accuracy": 1.0
+    }
+  ],
+  "notes": "Attachment evidence is auxiliary; high-risk actions still require core policy/order/history evidence."
+}

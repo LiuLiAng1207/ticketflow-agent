@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
+from uuid import uuid4
 
-from .models import CustomerProfile, ExternalOpRecord, OrderRecord, TicketRecord
+from .models import AttachmentEvidence, AttachmentRecord, CustomerProfile, ExternalOpRecord, OrderRecord, TicketRecord
 
 
 def _query_terms(query: str) -> list[str]:
@@ -104,6 +106,36 @@ CREATE TABLE IF NOT EXISTS ticket_history (
     agent_name TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ticket_attachments (
+    attachment_id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    file_type TEXT NOT NULL,
+    source_dataset TEXT,
+    storage_path TEXT,
+    content_hash TEXT,
+    ocr_text TEXT NOT NULL DEFAULT '',
+    visual_summary TEXT NOT NULL DEFAULT '',
+    metadata TEXT NOT NULL DEFAULT '{}',
+    parse_status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS attachment_evidence (
+    evidence_id TEXT PRIMARY KEY,
+    attachment_id TEXT NOT NULL,
+    ticket_id TEXT NOT NULL,
+    evidence_type TEXT NOT NULL,
+    extracted_text TEXT NOT NULL DEFAULT '',
+    visual_summary TEXT NOT NULL DEFAULT '',
+    entities TEXT NOT NULL DEFAULT '{}',
+    confidence REAL NOT NULL DEFAULT 0,
+    source_span TEXT,
+    bbox TEXT,
+    risk_flags TEXT NOT NULL DEFAULT '[]',
+    metadata TEXT NOT NULL DEFAULT '{}'
+);
+
 CREATE TABLE IF NOT EXISTS escalations (
     escalation_id INTEGER PRIMARY KEY AUTOINCREMENT,
     ticket_id TEXT NOT NULL,
@@ -194,6 +226,7 @@ class TicketFlowRepository:
             "customers.csv": "customers",
             "orders.csv": "orders",
             "tickets.csv": "tickets",
+            "ticket_attachments.csv": "ticket_attachments",
             "kb_articles.csv": "kb_articles",
             "policies.csv": "policies",
             "reply_templates.csv": "reply_templates",
@@ -202,6 +235,8 @@ class TicketFlowRepository:
         with self.connect() as conn:
             for filename, table in tables.items():
                 path = seed_dir / filename
+                if not path.exists():
+                    continue
                 with path.open("r", encoding="utf-8", newline="") as handle:
                     reader = csv.DictReader(handle)
                     rows = list(reader)
@@ -233,6 +268,7 @@ class TicketFlowRepository:
     def reset_from_seed(self, seed_dir: Path) -> None:
         self.load_seed_directory(seed_dir)
         with self.connect() as conn:
+            conn.execute("DELETE FROM attachment_evidence")
             conn.execute("DELETE FROM escalations")
             conn.execute("DELETE FROM refund_requests")
             conn.execute("DELETE FROM audit_log")
@@ -279,6 +315,116 @@ class TicketFlowRepository:
                 (ticket_id, limit),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def create_ticket_attachment(
+        self,
+        *,
+        ticket_id: str,
+        filename: str,
+        file_type: str = "unknown",
+        source_dataset: str | None = None,
+        storage_path: str | None = None,
+        content_hash: str | None = None,
+        ocr_text: str = "",
+        visual_summary: str = "",
+        metadata: dict[str, object] | None = None,
+    ) -> AttachmentRecord:
+        metadata = metadata or {}
+        if content_hash is None:
+            content_hash = hashlib.sha256(f"{filename}\n{ocr_text}\n{visual_summary}".encode("utf-8")).hexdigest()
+        attachment_id = f"ATT-{uuid4().hex[:12]}"
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO ticket_attachments
+                    (attachment_id, ticket_id, filename, file_type, source_dataset, storage_path, content_hash, ocr_text, visual_summary, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    attachment_id,
+                    ticket_id,
+                    filename,
+                    file_type,
+                    source_dataset,
+                    storage_path,
+                    content_hash,
+                    ocr_text,
+                    visual_summary,
+                    json.dumps(metadata, ensure_ascii=False),
+                ),
+            )
+            conn.commit()
+        return self.get_ticket_attachment(attachment_id)
+
+    def get_ticket_attachment(self, attachment_id: str) -> AttachmentRecord:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM ticket_attachments WHERE attachment_id = ?", (attachment_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"Unknown attachment_id: {attachment_id}")
+        return self._attachment_from_row(row)
+
+    def list_ticket_attachments(self, ticket_id: str) -> list[AttachmentRecord]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM ticket_attachments WHERE ticket_id = ? ORDER BY created_at ASC, attachment_id ASC",
+                (ticket_id,),
+            ).fetchall()
+        return [self._attachment_from_row(row) for row in rows]
+
+    def replace_attachment_evidence(self, ticket_id: str, evidence: list[AttachmentEvidence]) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM attachment_evidence WHERE ticket_id = ?", (ticket_id,))
+            for item in evidence:
+                conn.execute(
+                    """
+                    INSERT INTO attachment_evidence
+                        (evidence_id, attachment_id, ticket_id, evidence_type, extracted_text, visual_summary, entities, confidence, source_span, bbox, risk_flags, metadata)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item.evidence_id,
+                        item.attachment_id,
+                        item.ticket_id,
+                        item.evidence_type,
+                        item.extracted_text,
+                        item.visual_summary,
+                        json.dumps(item.entities, ensure_ascii=False),
+                        item.confidence,
+                        item.source_span,
+                        json.dumps(item.bbox, ensure_ascii=False) if item.bbox is not None else None,
+                        json.dumps(item.risk_flags, ensure_ascii=False),
+                        json.dumps(item.metadata, ensure_ascii=False),
+                    ),
+                )
+            conn.commit()
+
+    def update_attachment_parse_status(self, attachment_id: str, status: str) -> None:
+        with self.connect() as conn:
+            conn.execute("UPDATE ticket_attachments SET parse_status = ? WHERE attachment_id = ?", (status, attachment_id))
+            conn.commit()
+
+    def list_attachment_evidence(self, ticket_id: str) -> list[AttachmentEvidence]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM attachment_evidence WHERE ticket_id = ? ORDER BY evidence_id ASC",
+                (ticket_id,),
+            ).fetchall()
+        return [self._attachment_evidence_from_row(row) for row in rows]
+
+    @staticmethod
+    def _attachment_from_row(row: sqlite3.Row) -> AttachmentRecord:
+        payload = dict(row)
+        payload["metadata"] = json.loads(payload["metadata"] or "{}")
+        return AttachmentRecord.model_validate(payload)
+
+    @staticmethod
+    def _attachment_evidence_from_row(row: sqlite3.Row) -> AttachmentEvidence:
+        payload = dict(row)
+        payload["entities"] = json.loads(payload["entities"] or "{}")
+        payload["bbox"] = json.loads(payload["bbox"]) if payload.get("bbox") else None
+        payload["risk_flags"] = json.loads(payload["risk_flags"] or "[]")
+        payload["metadata"] = json.loads(payload["metadata"] or "{}")
+        return AttachmentEvidence.model_validate(payload)
 
     def list_kb_articles(self) -> list[dict[str, object]]:
         with self.connect() as conn:
@@ -331,11 +477,42 @@ class TicketFlowRepository:
     def search_related_history(self, query: str, limit: int = 5) -> list[dict[str, object]]:
         terms = _query_terms(query)
         with self.connect() as conn:
-            rows = conn.execute("SELECT event_id, ticket_id, message, created_at, agent_name FROM ticket_history").fetchall()
+            rows = conn.execute(
+                """
+                SELECT
+                    h.event_id,
+                    h.ticket_id,
+                    h.message,
+                    h.created_at,
+                    h.agent_name,
+                    t.title,
+                    t.body,
+                    t.product,
+                    t.expected_category
+                FROM ticket_history h
+                JOIN tickets t ON t.ticket_id = h.ticket_id
+                """
+            ).fetchall()
         scored_rows: list[tuple[float, sqlite3.Row]] = []
         for row in rows:
-            text = f"{row['message']} {row['agent_name']}".lower()
+            text = " ".join(
+                str(part or "")
+                for part in (
+                    row["message"],
+                    row["agent_name"],
+                    row["title"],
+                    row["body"],
+                    row["product"],
+                    row["expected_category"],
+                )
+            ).lower()
             score = sum(1 for term in terms if term in text)
+            if row["expected_category"] and any(term in str(row["expected_category"]).lower() for term in terms):
+                score += 1.0
+            if row["product"] and any(term in str(row["product"]).lower() for term in terms):
+                score += 0.8
+            if row["title"] and any(term in str(row["title"]).lower() for term in terms):
+                score += 0.5
             if score:
                 scored_rows.append((score, row))
         scored_rows.sort(key=lambda item: item[0], reverse=True)

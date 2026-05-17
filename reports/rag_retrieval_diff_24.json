@@ -1,0 +1,102 @@
+{
+  "sample_size": 24,
+  "changed_ticket_count": 14,
+  "changed_ticket_rate": 0.583,
+  "examples": [
+    {
+      "ticket_id": "TCK-0295",
+      "hash": [
+        "policy:POL-001-01",
+        "kb:KB-099",
+        "history:HIS-0010",
+        "history:HIS-0040",
+        "history:HIS-0060",
+        "kb:KB-104"
+      ],
+      "transformers": [
+        "policy:POL-001-01",
+        "kb:KB-099",
+        "history:HIS-0040",
+        "history:HIS-0060",
+        "history:HIS-0010",
+        "kb:KB-104"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0103",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-060",
+        "history:HIS-0048",
+        "history:HIS-0058",
+        "history:HIS-0038",
+        "kb:KB-065"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-050",
+        "history:HIS-0058",
+        "history:HIS-0038",
+        "history:HIS-0048",
+        "kb:KB-055"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0008",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-050",
+        "history:HIS-0028",
+        "history:HIS-0128",
+        "history:HIS-0148",
+        "kb:KB-060"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-050",
+        "history:HIS-0028",
+        "history:HIS-0128",
+        "history:HIS-0148",
+        "kb:KB-055"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0200",
+      "hash": [
+        "policy:POL-002-02",
+        "kb:KB-099",
+        "history:HIS-0010",
+        "history:HIS-0040",
+        "history:HIS-0060",
+        "kb:KB-104"
+      ],
+      "transformers": [
+        "policy:POL-002-02",
+        "kb:KB-099",
+        "history:HIS-0040",
+        "history:HIS-0060",
+        "history:HIS-0010",
+        "kb:KB-104"
+      ]
+    },
+    {
+      "ticket_id": "TCK-0104",
+      "hash": [
+        "policy:POL-003-03",
+        "kb:KB-082",
+        "history:HIS-0044",
+        "history:HIS-0054",
+        "history:HIS-0024",
+        "kb:KB-087"
+      ],
+      "transformers": [
+        "policy:POL-003-03",
+        "kb:KB-082",
+        "history:HIS-0044",
+        "history:HIS-0024",
+        "history:HIS-0054",
+        "kb:KB-077"
+      ]
+    }
+  ]
+}

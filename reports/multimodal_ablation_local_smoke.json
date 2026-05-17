@@ -1,0 +1,47 @@
+{
+  "dataset": "multimodal_ticket_eval_v1_ablation",
+  "dataset_path": "data\\eval\\multimodal_ticket_eval_v1.csv",
+  "sample_count": 10,
+  "enabled": {
+    "report_path": "reports\\multimodal_ablation_local_smoke_with_attachment.json",
+    "sample_count": 10,
+    "metrics": {
+      "attachment_entity_accuracy": 1.0,
+      "attachment_evidence_mrr": 1.0,
+      "attachment_parse_success": 1.0,
+      "evidence_based_action_accuracy": 1.0,
+      "low_confidence_attachment_rate": 0.0,
+      "multimodal_evidence_recall": 1.0,
+      "sufficiency_accuracy": 1.0,
+      "tool_approval_interception_accuracy": 1.0,
+      "attachment_parse_success_rate": 1.0
+    }
+  },
+  "text_only": {
+    "report_path": "reports\\multimodal_ablation_local_smoke_text_only.json",
+    "sample_count": 10,
+    "metrics": {
+      "attachment_entity_accuracy": 0.0,
+      "attachment_evidence_mrr": 0.0,
+      "attachment_parse_success": 0.0,
+      "evidence_based_action_accuracy": 1.0,
+      "low_confidence_attachment_rate": 0.0,
+      "multimodal_evidence_recall": 0.0,
+      "sufficiency_accuracy": 1.0,
+      "tool_approval_interception_accuracy": 1.0,
+      "attachment_parse_success_rate": 0.0
+    }
+  },
+  "lift": {
+    "attachment_entity_accuracy": 1.0,
+    "attachment_evidence_mrr": 1.0,
+    "attachment_parse_success": 1.0,
+    "attachment_parse_success_rate": 1.0,
+    "evidence_based_action_accuracy": 0.0,
+    "low_confidence_attachment_rate": 0.0,
+    "multimodal_evidence_recall": 1.0,
+    "sufficiency_accuracy": 0.0,
+    "tool_approval_interception_accuracy": 0.0
+  },
+  "notes": "This ablation uses the same tickets twice. The text-only run withholds all benchmark attachments, so metric lift measures the contribution of attachment evidence rather than a changed ticket distribution."
+}

@@ -8,6 +8,7 @@ from typing_extensions import NotRequired, TypedDict
 
 
 Priority = Literal["low", "medium", "high", "urgent"]
+RiskLevel = Literal["standard", "elevated", "high"]
 Category = Literal[
     "billing_refund",
     "delivery_issue",
@@ -15,6 +16,7 @@ Category = Literal[
     "account_access",
     "general_inquiry",
 ]
+ActionRouteFamily = Literal["refund_candidate", "escalation_candidate", "standard_resolution"]
 ActionType = Literal[
     "refund",
     "escalation",
@@ -25,7 +27,8 @@ ActionType = Literal[
     "close_ticket_without_contact",
 ]
 ApprovalDecision = Literal["approve", "edit", "reject"]
-DecisionSource = Literal["rule", "llm_cloud", "llm_minimind", "human_edit"]
+ApprovalMode = Literal["auto", "approve_reject", "approve_edit_reject"]
+DecisionSource = Literal["rule", "governance", "llm_cloud", "llm_minimind", "human_edit"]
 
 
 class Citation(BaseModel):
@@ -76,12 +79,43 @@ class OrderRecord(BaseModel):
     eligible_for_refund: bool
 
 
+class AttachmentRecord(BaseModel):
+    attachment_id: str
+    ticket_id: str
+    filename: str
+    file_type: Literal["image", "pdf", "text", "log", "unknown"] = "unknown"
+    source_dataset: str | None = None
+    storage_path: str | None = None
+    content_hash: str | None = None
+    ocr_text: str = ""
+    visual_summary: str = ""
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    parse_status: Literal["pending", "parsed", "failed"] = "pending"
+    created_at: datetime | None = None
+
+
+class AttachmentEvidence(BaseModel):
+    evidence_id: str
+    attachment_id: str
+    ticket_id: str
+    evidence_type: str
+    extracted_text: str = ""
+    visual_summary: str = ""
+    entities: dict[str, Any] = Field(default_factory=dict)
+    confidence: float = 0.0
+    source_span: str | None = None
+    bbox: list[float] | None = None
+    risk_flags: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class RetrievedDoc(BaseModel):
     doc_id: str
-    source_type: Literal["kb", "policy", "history", "customer", "order", "template"]
+    source_type: Literal["kb", "policy", "history", "customer", "order", "template", "attachment"]
     title: str
     snippet: str
     score: float = 0.0
+    rerank_score: float | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
     citations: list[Citation] = Field(default_factory=list)
 
@@ -94,6 +128,7 @@ class RetrievalStats(BaseModel):
     fallback_to_keywords: bool = False
     source_counts: dict[str, int] = Field(default_factory=dict)
     retrieved_doc_ids: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class TriageResult(BaseModel):
@@ -118,8 +153,45 @@ class ActionProposal(BaseModel):
     suggested_tool: str
     tool_args: dict[str, Any] = Field(default_factory=dict)
     confidence: float = 0.0
+    route_family: ActionRouteFamily = "standard_resolution"
+    sufficiency_passed: bool = True
+    supporting_doc_ids: list[str] = Field(default_factory=list)
+    missing_sources: list[str] = Field(default_factory=list)
     decision_source: DecisionSource = "rule"
     fallback_reason: str | None = None
+
+
+class ContextSufficiencyResult(BaseModel):
+    route_family: ActionRouteFamily
+    risk_level: RiskLevel
+    required_sources: list[str] = Field(default_factory=list)
+    supporting_doc_ids: list[str] = Field(default_factory=list)
+    supporting_history_doc_ids: list[str] = Field(default_factory=list)
+    missing_sources: list[str] = Field(default_factory=list)
+    sufficient: bool
+    fallback_route: ActionType | None = None
+    support_strength: float = 0.0
+    reasoning: str
+    decision_source: DecisionSource = "rule"
+    fallback_reason: str | None = None
+
+
+class ActionRoutingDecision(BaseModel):
+    route_family: ActionRouteFamily
+    sufficient: bool
+    allowed_actions: list[ActionType] = Field(default_factory=list)
+    forced_action_type: ActionType | None = None
+    forced_target_status: str | None = None
+    reasoning: str
+
+
+class ToolApprovalPolicy(BaseModel):
+    tool_name: str
+    sensitive: bool
+    approval_mode: ApprovalMode = "auto"
+    requires_sufficiency: bool = False
+    allowed_decisions: list[ApprovalDecision] = Field(default_factory=list)
+    description: str = ""
 
 
 class ReviewDecision(BaseModel):
@@ -159,6 +231,19 @@ class TicketResponse(BaseModel):
     fallback_reason: str | None = None
 
 
+class ReplyFactCheckResult(BaseModel):
+    grounded: bool
+    policy_safe: bool
+    hallucination_risk: bool
+    supported_claim_ratio: float
+    unsupported_claims: list[str] = Field(default_factory=list)
+    rewrite_needed: bool = False
+    review_note: str = ""
+    passed: bool = True
+    rewritten: bool = False
+    downgraded: bool = False
+
+
 class ExternalOpRecord(BaseModel):
     op_type: Literal["incident_email", "kb_candidate_email"]
     status: Literal["sent", "failed", "skipped"]
@@ -181,13 +266,20 @@ class InvocationResult(BaseModel):
 class TicketFlowState(TypedDict):
     thread_id: str
     ticket: TicketRecord
+    attachments: NotRequired[list[AttachmentRecord]]
+    attachment_evidence: NotRequired[list[AttachmentEvidence]]
     triage_result: NotRequired[TriageResult | None]
     retrieved_docs: NotRequired[list[RetrievedDoc]]
     retrieval_stats: NotRequired[RetrievalStats | None]
     policy_hits: NotRequired[list[RetrievedDoc]]
+    sufficiency_result: NotRequired[ContextSufficiencyResult | None]
+    action_route: NotRequired[ActionRoutingDecision | None]
     proposed_action: NotRequired[ActionProposal | None]
+    tool_approval_policy: NotRequired[ToolApprovalPolicy | None]
     review_decision: NotRequired[ReviewDecision | None]
     execution_result: NotRequired[ExecutionResult | None]
+    reply_draft: NotRequired[TicketResponse | None]
+    reply_fact_check: NotRequired[ReplyFactCheckResult | None]
     draft_reply: NotRequired[TicketResponse | None]
     approval_state: NotRequired[str]
     audit_log: NotRequired[list[AuditEvent]]

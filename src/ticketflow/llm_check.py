@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import requests
+
 from .config import TicketFlowSettings
 from .llm import OpenAICompatClient
 
@@ -50,12 +52,56 @@ def _build_client(settings: TicketFlowSettings, target: str) -> OpenAICompatClie
 
 
 def _probe_client(client: OpenAICompatClient, label: str) -> dict[str, Any]:
-    payload = client.chat_json(
-        system_prompt="你是连通性检查助手，只返回 JSON。",
-        user_prompt="请返回一个 JSON，对象字段必须包含 status、provider、message。",
-    )
-    payload["target"] = label
-    return payload
+    url = f"{client.base_url.rstrip('/')}/{client.chat_path.strip('/')}"
+    headers = {
+        "Authorization": f"Bearer {client.api_key}",
+        "Content-Type": "application/json",
+    }
+    wants_json = label == "cloud"
+    request_json: dict[str, Any] = {
+        "model": client.model,
+        "temperature": 0.0,
+        "max_tokens": 96 if wants_json else 16,
+        "stream": False,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a connectivity probe. "
+                    "When JSON mode is requested, return JSON only with keys status, provider, message."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    'Return exactly {"status":"ok","provider":"probe","message":"reachable"} and no other text.'
+                    if wants_json
+                    else "OK"
+                ),
+            },
+        ],
+    }
+    if wants_json:
+        request_json["response_format"] = {"type": "json_object"}
+        if "deepseek" in client.base_url.lower() or client.model.lower().startswith("deepseek"):
+            request_json["thinking"] = {"type": "disabled"}
+
+    response = requests.post(url, headers=headers, json=request_json, timeout=min(client.timeout, 12), verify=client.verify)
+    response.raise_for_status()
+    content = client._extract_message_content(response.text).strip()
+
+    if wants_json:
+        payload = json.loads(content)
+        payload["target"] = label
+        return payload
+
+    return {
+        "target": label,
+        "status": "ok",
+        "provider": client.source_label,
+        "message": "local endpoint reachable",
+        "preview": content[:120],
+    }
 
 
 def run_check(project_root: Path, target: str = "active") -> dict[str, Any]:
@@ -82,10 +128,14 @@ def run_check(project_root: Path, target: str = "active") -> dict[str, Any]:
                 targets.append("cloud")
         else:
             report["status"] = "ok"
-            report["message"] = "当前处于 rule 模式，无需 LLM 连通性检查。"
+            report["message"] = "当前处于 rule 模式，无需进行 LLM 连通性检查。"
             return report
     elif target == "all":
-        targets = [name for name in ("cloud", "minimind", "minimind_structured", "minimind_reply") if _build_client(settings, name) is not None]
+        targets = [
+            name
+            for name in ("cloud", "minimind", "minimind_structured", "minimind_reply")
+            if _build_client(settings, name) is not None
+        ]
     else:
         targets = [target]
 
@@ -99,7 +149,11 @@ def run_check(project_root: Path, target: str = "active") -> dict[str, Any]:
         client = _build_client(settings, item)
         if client is None:
             report["checks"].append(
-                {"target": item, "status": "missing_config", "message": f"{item} 后端配置不完整。"}
+                {
+                    "target": item,
+                    "status": "missing_config",
+                    "message": f"{item} 后端配置不完整。",
+                }
             )
             overall_ok = False
             continue
@@ -111,7 +165,7 @@ def run_check(project_root: Path, target: str = "active") -> dict[str, Any]:
             overall_ok = False
 
     report["status"] = "ok" if overall_ok else "failed"
-    report["message"] = "所有目标后端都已连通。" if overall_ok else "存在后端连通性失败，请检查配置或网络。"
+    report["message"] = "所有目标后端都已连通。" if overall_ok else "存在后端连通性失败，请检查配置或服务状态。"
     return report
 
 
