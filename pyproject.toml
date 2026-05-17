@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ticketflow"
 version = "0.1.0"
-description = "A LangGraph-powered ticket orchestration demo for customer support and IT workflows."
+description = "A LangGraph-powered ticket collaboration platform for customer support and IT service workflows."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
