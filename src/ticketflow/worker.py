@@ -16,6 +16,7 @@ from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .service_settings import ServiceSettings
 from .skills import SkillRegistry, SkillRuntime
+from .claw import ClawRegistry, ClawRuntime
 
 
 @dataclass(frozen=True, slots=True)
@@ -217,6 +218,62 @@ def build_knowledge_graph_now(
     finally:
         store.close()
         runner.close()
+
+
+def run_claw_task_now(
+    *,
+    task_id: str,
+    project_root: str | Path,
+    actor: str = "ticketflow-worker",
+    pass_k: int | None = None,
+    run_id: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
+    try:
+        ClawRegistry(runner.repository, settings.claw_tasks_dir).reload()
+        SkillRegistry(runner.repository, settings.skills_dir).reload()
+        result = ClawRuntime(
+            runner.repository,
+            project_root=project_root,
+            runner_overrides=runner_overrides,
+        ).run_task(task_id, actor=actor, pass_k=pass_k, run_id=run_id)
+        return result.model_dump(mode="json")
+    finally:
+        runner.close()
+
+
+@celery_app.task(name="ticketflow.run_claw_task")
+def run_claw_task(
+    task_id: str,
+    project_root: str,
+    actor: str = "ticketflow-worker",
+    pass_k: int | None = None,
+    run_id: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    return run_claw_task_now(
+        task_id=task_id,
+        project_root=project_root,
+        actor=actor,
+        pass_k=pass_k,
+        run_id=run_id,
+        runner_overrides=runner_overrides,
+    )
+
+
+def enqueue_run_claw_task(
+    *,
+    task_id: str,
+    project_root: str | Path,
+    actor: str = "ticketflow-worker",
+    pass_k: int | None = None,
+    run_id: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> str:
+    async_result = run_claw_task.delay(str(task_id), str(project_root), actor, pass_k, run_id, runner_overrides)
+    return str(async_result.id)
 
 
 @celery_app.task(name="ticketflow.build_knowledge_graph")

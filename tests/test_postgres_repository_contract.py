@@ -32,6 +32,11 @@ REQUIRED_TABLES = {
     "skill_versions",
     "skill_permissions",
     "skill_runs",
+    "claw_tasks",
+    "claw_runs",
+    "claw_attempts",
+    "claw_trajectories",
+    "claw_scores",
 }
 
 REQUIRED_METHODS = {
@@ -79,6 +84,18 @@ REQUIRED_METHODS = {
     "create_skill_run",
     "update_skill_run",
     "list_skill_runs",
+    "upsert_claw_task",
+    "list_claw_tasks",
+    "get_claw_task",
+    "create_claw_run",
+    "update_claw_run",
+    "create_claw_attempt",
+    "update_claw_attempt",
+    "record_claw_trajectory",
+    "record_claw_score",
+    "get_claw_run",
+    "list_claw_runs",
+    "list_claw_leaderboard",
 }
 
 

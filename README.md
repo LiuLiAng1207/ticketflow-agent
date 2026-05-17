@@ -48,6 +48,12 @@ ticketflow-api
 - `POST /api/v1/skills/{skill_id}/disable`
 - `POST /api/v1/skills/{skill_id}/run`
 - `GET /api/v1/skills/runs`
+- `GET /api/v1/claw/tasks`
+- `GET /api/v1/claw/tasks/{task_id}`
+- `POST /api/v1/claw/tasks/reload`
+- `POST /api/v1/claw/tasks/{task_id}/run`
+- `GET /api/v1/claw/runs/{run_id}`
+- `GET /api/v1/claw/leaderboard`
 
 默认异步运行会返回 `task_id`。如果工作流遇到退款或升级等敏感工具审批，任务会进入 `waiting_approval`，审批通过后 API 会自动 resume workflow 并更新任务状态。
 
@@ -70,6 +76,8 @@ celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
 `build_knowledge_graph` rebuilds a ticket-level business graph from the current repository state. The graph is used for evidence-chain explanation, audit review, and future GraphRAG retrieval; it does not replace sufficiency checks or approval controls.
 
 `run_skill` executes only allowlisted TicketFlow skills. Skills are registered from `skills/<skill_id>/skill.yaml` and `SKILL.md`, persisted through the repository backend, and audited through `skill_runs`. Skill Runtime is a governance layer, not an arbitrary code execution surface.
+
+`run_claw_task` executes registered Claw benchmark tasks from `claw_tasks/*.yaml`. Each run records attempts, trajectory events, deterministic verifier scores, and leaderboard rows. Claw is an evaluation harness only; it does not bypass sufficiency checks, durable approvals, Skill permissions, or Outbox idempotency.
 
 ## Docker Compose
 
@@ -122,6 +130,7 @@ ENABLE_PRODUCTION_SERVICES=false
 SKILL_REGISTRY_BACKEND=repository
 SKILLS_DIR=skills
 ENABLE_SKILL_RUNTIME=true
+CLAW_TASKS_DIR=claw_tasks
 ```
 
 Docker Compose 中 `CELERY_TASK_ALWAYS_EAGER=false`，worker 会通过 Redis broker 消费任务。

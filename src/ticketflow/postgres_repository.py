@@ -280,6 +280,67 @@ CREATE TABLE IF NOT EXISTS skill_runs (
     updated_at TIMESTAMPTZ NOT NULL,
     completed_at TIMESTAMPTZ
 );
+
+CREATE TABLE IF NOT EXISTS claw_tasks (
+    task_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    goal TEXT NOT NULL,
+    category TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL,
+    pass_k INTEGER NOT NULL,
+    manifest JSONB NOT NULL,
+    task_doc TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS claw_runs (
+    run_id TEXT PRIMARY KEY,
+    task_id TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    status TEXT NOT NULL,
+    pass_k INTEGER NOT NULL,
+    config_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    summary_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS claw_attempts (
+    attempt_id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    attempt_index INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    input_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    output_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    error_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    UNIQUE(run_id, attempt_index)
+);
+
+CREATE TABLE IF NOT EXISTS claw_trajectories (
+    trajectory_id TEXT PRIMARY KEY,
+    attempt_id TEXT NOT NULL,
+    event_index INTEGER NOT NULL,
+    event_type TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS claw_scores (
+    score_id TEXT PRIMARY KEY,
+    attempt_id TEXT NOT NULL,
+    metrics JSONB NOT NULL,
+    total_score DOUBLE PRECISION NOT NULL,
+    passed BOOLEAN NOT NULL,
+    failure_reasons JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL
+);
 """
 
 
@@ -1465,3 +1526,303 @@ class PostgresTicketFlowRepository:
                     (skill_id, limit),
                 ).fetchall()
         return [self._skill_run_from_row(dict(row)) for row in rows]
+
+    @staticmethod
+    def _claw_task_from_row(row: dict[str, object]) -> dict[str, object]:
+        result = _wire_row(row)
+        result["enabled"] = bool(result["enabled"])
+        result["manifest"] = _json_load(result.get("manifest"))
+        return result
+
+    @staticmethod
+    def _claw_run_from_row(row: dict[str, object]) -> dict[str, object]:
+        result = _wire_row(row)
+        result["config_payload"] = _json_load(result.get("config_payload"))
+        result["summary"] = _json_load(result.pop("summary_payload", {}))
+        return result
+
+    @staticmethod
+    def _claw_attempt_from_row(row: dict[str, object]) -> dict[str, object]:
+        result = _wire_row(row)
+        result["input_payload"] = _json_load(result.get("input_payload"))
+        result["output_payload"] = _json_load(result.get("output_payload"))
+        return result
+
+    @staticmethod
+    def _claw_trajectory_from_row(row: dict[str, object]) -> dict[str, object]:
+        result = _wire_row(row)
+        result["payload"] = _json_load(result.get("payload"))
+        return result
+
+    @staticmethod
+    def _claw_score_from_row(row: dict[str, object]) -> dict[str, object]:
+        result = _wire_row(row)
+        result["metrics"] = _json_load(result.get("metrics"))
+        result["passed"] = bool(result["passed"])
+        result["failure_reasons"] = _json_load(result.get("failure_reasons"))
+        return result
+
+    def upsert_claw_task(self, manifest: dict[str, object], task_doc: str = "") -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO claw_tasks
+                (task_id, name, goal, category, enabled, pass_k, manifest, task_doc, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s)
+                ON CONFLICT(task_id) DO UPDATE SET
+                    name = excluded.name,
+                    goal = excluded.goal,
+                    category = excluded.category,
+                    enabled = excluded.enabled,
+                    pass_k = excluded.pass_k,
+                    manifest = excluded.manifest,
+                    task_doc = excluded.task_doc,
+                    updated_at = excluded.updated_at
+                RETURNING *
+                """,
+                (
+                    str(manifest["task_id"]),
+                    str(manifest["name"]),
+                    str(manifest["goal"]),
+                    str(manifest.get("category") or "ticketflow"),
+                    bool(manifest.get("enabled", True)),
+                    int(manifest.get("pass_k") or 3),
+                    _json_dump(manifest),
+                    task_doc,
+                    now,
+                    now,
+                ),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._claw_task_from_row(dict(row))
+
+    def list_claw_tasks(self, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM claw_tasks ORDER BY task_id ASC LIMIT %s", (limit,)).fetchall()
+        return [self._claw_task_from_row(dict(row)) for row in rows]
+
+    def get_claw_task(self, task_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM claw_tasks WHERE task_id = %s", (task_id,)).fetchone()
+        return self._claw_task_from_row(dict(row)) if row else None
+
+    def create_claw_run(
+        self,
+        *,
+        task_id: str,
+        actor: str,
+        pass_k: int,
+        config_payload: dict[str, object] | None = None,
+        status: str = "running",
+    ) -> dict[str, object]:
+        now = _utc_now()
+        run_id = f"clawrun-{uuid4().hex}"
+        completed_at = now if status in {"succeeded", "failed"} else None
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO claw_runs
+                (run_id, task_id, actor, status, pass_k, config_payload, summary_payload, error_message,
+                 created_at, updated_at, completed_at)
+                VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s)
+                RETURNING *
+                """,
+                (run_id, task_id, actor, status, pass_k, _json_dump(config_payload), _json_dump({}), None, now, now, completed_at),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._claw_run_from_row(dict(row))
+
+    def update_claw_run(
+        self,
+        run_id: str,
+        *,
+        status: str,
+        summary_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        completed_at = now if status in {"succeeded", "failed"} else None
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE claw_runs
+                SET status = %s, summary_payload = %s::jsonb, error_message = %s, updated_at = %s, completed_at = %s
+                WHERE run_id = %s
+                RETURNING *
+                """,
+                (status, _json_dump(summary_payload), error_message, now, completed_at, run_id),
+            ).fetchone()
+            conn.commit()
+        if row is None:
+            raise KeyError(f"Unknown claw run_id: {run_id}")
+        return self._claw_run_from_row(dict(row))
+
+    def create_claw_attempt(
+        self,
+        *,
+        run_id: str,
+        attempt_index: int,
+        input_payload: dict[str, object] | None = None,
+        status: str = "running",
+    ) -> dict[str, object]:
+        now = _utc_now()
+        attempt_id = f"clawattempt-{uuid4().hex}"
+        completed_at = now if status in {"succeeded", "failed"} else None
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO claw_attempts
+                (attempt_id, run_id, attempt_index, status, input_payload, output_payload, error_message,
+                 created_at, updated_at, completed_at)
+                VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s, %s, %s)
+                RETURNING *
+                """,
+                (attempt_id, run_id, attempt_index, status, _json_dump(input_payload), _json_dump({}), None, now, now, completed_at),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._claw_attempt_from_row(dict(row))
+
+    def update_claw_attempt(
+        self,
+        attempt_id: str,
+        *,
+        status: str,
+        output_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        completed_at = now if status in {"succeeded", "failed"} else None
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                UPDATE claw_attempts
+                SET status = %s, output_payload = %s::jsonb, error_message = %s, updated_at = %s, completed_at = %s
+                WHERE attempt_id = %s
+                RETURNING *
+                """,
+                (status, _json_dump(output_payload), error_message, now, completed_at, attempt_id),
+            ).fetchone()
+            conn.commit()
+        if row is None:
+            raise KeyError(f"Unknown claw attempt_id: {attempt_id}")
+        return self._claw_attempt_from_row(dict(row))
+
+    def record_claw_trajectory(
+        self,
+        *,
+        attempt_id: str,
+        event_type: str,
+        detail: str,
+        payload: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        trajectory_id = f"clawtraj-{uuid4().hex}"
+        with self.connect() as conn:
+            index_row = conn.execute(
+                "SELECT COALESCE(MAX(event_index), 0) + 1 AS event_index FROM claw_trajectories WHERE attempt_id = %s",
+                (attempt_id,),
+            ).fetchone()
+            event_index = int(index_row["event_index"] if index_row else 1)
+            row = conn.execute(
+                """
+                INSERT INTO claw_trajectories
+                (trajectory_id, attempt_id, event_index, event_type, detail, payload, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s)
+                RETURNING *
+                """,
+                (trajectory_id, attempt_id, event_index, event_type, detail, _json_dump(payload), now),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._claw_trajectory_from_row(dict(row))
+
+    def record_claw_score(
+        self,
+        *,
+        attempt_id: str,
+        metrics: dict[str, object],
+        total_score: float,
+        passed: bool,
+        failure_reasons: list[object] | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        score_id = f"clawscore-{uuid4().hex}"
+        with self.connect() as conn:
+            conn.execute("DELETE FROM claw_scores WHERE attempt_id = %s", (attempt_id,))
+            row = conn.execute(
+                """
+                INSERT INTO claw_scores
+                (score_id, attempt_id, metrics, total_score, passed, failure_reasons, created_at)
+                VALUES (%s, %s, %s::jsonb, %s, %s, %s::jsonb, %s)
+                RETURNING *
+                """,
+                (score_id, attempt_id, _json_dump(metrics), total_score, passed, _json_dump(failure_reasons or []), now),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._claw_score_from_row(dict(row))
+
+    def get_claw_run(self, run_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            run_row = conn.execute("SELECT * FROM claw_runs WHERE run_id = %s", (run_id,)).fetchone()
+            if run_row is None:
+                return None
+            attempt_rows = conn.execute(
+                "SELECT * FROM claw_attempts WHERE run_id = %s ORDER BY attempt_index ASC",
+                (run_id,),
+            ).fetchall()
+            attempts: list[dict[str, object]] = []
+            for attempt_row in attempt_rows:
+                attempt = self._claw_attempt_from_row(dict(attempt_row))
+                traj_rows = conn.execute(
+                    "SELECT * FROM claw_trajectories WHERE attempt_id = %s ORDER BY event_index ASC",
+                    (attempt["attempt_id"],),
+                ).fetchall()
+                score_row = conn.execute("SELECT * FROM claw_scores WHERE attempt_id = %s", (attempt["attempt_id"],)).fetchone()
+                attempt["trajectory"] = [self._claw_trajectory_from_row(dict(row)) for row in traj_rows]
+                attempt["score"] = self._claw_score_from_row(dict(score_row)) if score_row else None
+                attempts.append(attempt)
+        run = self._claw_run_from_row(dict(run_row))
+        run["attempts"] = attempts
+        return run
+
+    def list_claw_runs(self, task_id: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if task_id is None:
+                rows = conn.execute("SELECT * FROM claw_runs ORDER BY created_at DESC LIMIT %s", (limit,)).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM claw_runs WHERE task_id = %s ORDER BY created_at DESC LIMIT %s",
+                    (task_id, limit),
+                ).fetchall()
+        return [self._claw_run_from_row(dict(row)) for row in rows]
+
+    def list_claw_leaderboard(self, limit: int = 100) -> list[dict[str, object]]:
+        runs = self.list_claw_runs(limit=1000)
+        grouped: dict[str, list[dict[str, object]]] = {}
+        for run in runs:
+            grouped.setdefault(str(run["task_id"]), []).append(run)
+        rows: list[dict[str, object]] = []
+        for task_id, task_runs in grouped.items():
+            completed = [run for run in task_runs if run["status"] in {"succeeded", "failed"}]
+            if not completed:
+                continue
+            latest = completed[0]
+            summary = latest.get("summary") if isinstance(latest.get("summary"), dict) else {}
+            rows.append(
+                {
+                    "task_id": task_id,
+                    "latest_run_id": latest["run_id"],
+                    "latest_status": latest["status"],
+                    "run_count": len(completed),
+                    "pass_rate": summary.get("pass_rate", 0),
+                    "average_score": summary.get("average_score", 0),
+                    "best_score": summary.get("best_score", 0),
+                    "updated_at": latest["updated_at"],
+                }
+            )
+        return rows[:limit]

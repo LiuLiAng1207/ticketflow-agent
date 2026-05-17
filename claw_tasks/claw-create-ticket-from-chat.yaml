@@ -1,0 +1,18 @@
+task_id: claw-create-ticket-from-chat
+name: 对话创建工单
+goal: 通过对话 Agent 创建新工单，验证字段完整、状态为 open，并写入可追踪结果。
+category: agent_chat
+pass_k: 3
+input:
+  operation: agent_chat
+  message: 创建工单：企业客户反馈高级会员无法使用，页面提示服务不可用，请尽快处理。产品：高级会员服务。客户等级：企业客户。
+expected:
+  required_result_keys:
+    - ticket
+allowed_tools:
+  - agent:chat
+forbidden_tools:
+  - shell
+  - sql:raw
+verifier:
+  type: deterministic

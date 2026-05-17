@@ -10,13 +10,14 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from .claw import ClawRegistry, ClawRuntime
 from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
 from .skills import SkillRegistry, SkillRuntime
-from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_ticket_workflow
+from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_claw_task, enqueue_run_ticket_workflow
 
 
 class ApprovalDecisionPayload(BaseModel):
@@ -50,6 +51,11 @@ class SkillRunPayload(BaseModel):
     actor: str = "operator"
     ticket_id: str | None = None
     idempotency_key: str | None = None
+
+
+class ClawRunPayload(BaseModel):
+    actor: str = "operator"
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 def _model_payload(model: Any) -> dict[str, Any]:
@@ -88,6 +94,18 @@ def _get_skill_runtime(request: Request) -> SkillRuntime:
         project_root=request.app.state.project_root,
         runner_overrides=request.app.state.runner_overrides,
         knowledge_graph_store=_get_kg_store(request),
+    )
+
+
+def _get_claw_registry(request: Request) -> ClawRegistry:
+    return ClawRegistry(_get_runner(request).repository, request.app.state.service_settings.claw_tasks_dir)
+
+
+def _get_claw_runtime(request: Request) -> ClawRuntime:
+    return ClawRuntime(
+        _get_runner(request).repository,
+        project_root=request.app.state.project_root,
+        runner_overrides=request.app.state.runner_overrides,
     )
 
 
@@ -347,6 +365,91 @@ def create_app(
             idempotency_key=payload.idempotency_key,
         )
         return {"skill_run": result.model_dump(mode="json")}
+
+    @app.get("/api/v1/claw/tasks")
+    def list_claw_tasks(request: Request, limit: int = Query(default=100, ge=1, le=500)) -> dict[str, object]:
+        runner = _get_runner(request)
+        tasks = runner.repository.list_claw_tasks(limit=limit)
+        return {"tasks": tasks, "count": len(tasks)}
+
+    @app.post("/api/v1/claw/tasks/reload")
+    def reload_claw_tasks(request: Request) -> dict[str, object]:
+        return _get_claw_registry(request).reload()
+
+    @app.get("/api/v1/claw/tasks/{task_id}")
+    def get_claw_task(task_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        task = runner.repository.get_claw_task(task_id)
+        if task is None:
+            raise HTTPException(status_code=404, detail=f"Unknown Claw task_id: {task_id}")
+        return {"task": task}
+
+    @app.post("/api/v1/claw/tasks/{task_id}/run", response_model=None)
+    def run_claw_task_endpoint(
+        task_id: str,
+        request: Request,
+        payload: ClawRunPayload | None = None,
+        sync: bool = Query(default=False),
+        pass_k: int | None = Query(default=None, ge=1, le=10),
+    ) -> Any:
+        runner = _get_runner(request)
+        if runner.repository.get_claw_task(task_id) is None:
+            _get_claw_registry(request).reload()
+        if runner.repository.get_claw_task(task_id) is None:
+            raise HTTPException(status_code=404, detail=f"Unknown Claw task_id: {task_id}")
+        actor = payload.actor if payload is not None else "operator"
+        config = payload.config if payload is not None else {}
+        if sync:
+            result = _get_claw_runtime(request).run_task(task_id, actor=actor, pass_k=pass_k, config_payload=config)
+            return {"run": result.model_dump(mode="json")}
+        task = runner.repository.get_claw_task(task_id)
+        selected_pass_k = int(pass_k or (task or {}).get("pass_k") or 3)
+        run = runner.repository.create_claw_run(
+            task_id=task_id,
+            actor=actor,
+            pass_k=selected_pass_k,
+            config_payload={**config, "sync": False},
+            status="queued",
+        )
+        celery_task_id = enqueue_run_claw_task(
+            task_id=task_id,
+            project_root=request.app.state.project_root,
+            actor=actor,
+            pass_k=selected_pass_k,
+            run_id=str(run["run_id"]),
+            runner_overrides=request.app.state.runner_overrides,
+        )
+        current_run = runner.repository.get_claw_run(str(run["run_id"])) or run
+        if current_run["status"] == "queued":
+            current_run = runner.repository.update_claw_run(
+                str(run["run_id"]),
+                status="queued",
+                summary_payload={"celery_task_id": celery_task_id, "pass_k": selected_pass_k},
+            )
+        return JSONResponse(
+            status_code=202,
+            content=jsonable_encoder(
+                {
+                    "task_id": task_id,
+                    "run_id": run["run_id"],
+                    "status": current_run["status"],
+                    "celery_task_id": celery_task_id,
+                    "run": current_run,
+                }
+            ),
+        )
+
+    @app.get("/api/v1/claw/runs/{run_id}")
+    def get_claw_run(run_id: str, request: Request) -> dict[str, object]:
+        run = _get_runner(request).repository.get_claw_run(run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail=f"Unknown Claw run_id: {run_id}")
+        return {"run": run}
+
+    @app.get("/api/v1/claw/leaderboard")
+    def claw_leaderboard(request: Request, limit: int = Query(default=100, ge=1, le=500)) -> dict[str, object]:
+        rows = _get_runner(request).repository.list_claw_leaderboard(limit=limit)
+        return {"leaderboard": rows, "count": len(rows)}
 
     @app.get("/api/v1/kg/health")
     def kg_health(request: Request) -> dict[str, object]:

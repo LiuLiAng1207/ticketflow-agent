@@ -116,6 +116,74 @@ class RepositoryProtocol(Protocol):
 
     def list_skill_runs(self, skill_id: str | None = None, limit: int = 100) -> list[dict[str, object]]: ...
 
+    def upsert_claw_task(self, manifest: dict[str, object], task_doc: str = "") -> dict[str, object]: ...
+
+    def list_claw_tasks(self, limit: int = 100) -> list[dict[str, object]]: ...
+
+    def get_claw_task(self, task_id: str) -> dict[str, object] | None: ...
+
+    def create_claw_run(
+        self,
+        *,
+        task_id: str,
+        actor: str,
+        pass_k: int,
+        config_payload: dict[str, object] | None = None,
+        status: str = "running",
+    ) -> dict[str, object]: ...
+
+    def update_claw_run(
+        self,
+        run_id: str,
+        *,
+        status: str,
+        summary_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, object]: ...
+
+    def create_claw_attempt(
+        self,
+        *,
+        run_id: str,
+        attempt_index: int,
+        input_payload: dict[str, object] | None = None,
+        status: str = "running",
+    ) -> dict[str, object]: ...
+
+    def update_claw_attempt(
+        self,
+        attempt_id: str,
+        *,
+        status: str,
+        output_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+    ) -> dict[str, object]: ...
+
+    def record_claw_trajectory(
+        self,
+        *,
+        attempt_id: str,
+        event_type: str,
+        detail: str,
+        payload: dict[str, object] | None = None,
+    ) -> dict[str, object]: ...
+
+    def record_claw_score(
+        self,
+        *,
+        attempt_id: str,
+        metrics: dict[str, object],
+        total_score: float,
+        passed: bool,
+        failure_reasons: list[object] | None = None,
+    ) -> dict[str, object]: ...
+
+    def get_claw_run(self, run_id: str) -> dict[str, object] | None: ...
+
+    def list_claw_runs(self, task_id: str | None = None, limit: int = 100) -> list[dict[str, object]]: ...
+
+    def list_claw_leaderboard(self, limit: int = 100) -> list[dict[str, object]]: ...
+
 
 def create_repository(settings: ServiceSettings, *, sqlite_db_path: Path | None = None) -> RepositoryProtocol:
     if settings.database_backend == "postgres":

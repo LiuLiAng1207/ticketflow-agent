@@ -275,6 +275,8 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
         kg_health = _fetch_api_json(api_base_url, "/api/v1/kg/health")
         skills = _fetch_optional_api_json(api_base_url, "/api/v1/skills?limit=20").get("skills", [])
         skill_runs = _fetch_optional_api_json(api_base_url, "/api/v1/skills/runs?limit=20").get("runs", [])
+        claw_tasks = _fetch_optional_api_json(api_base_url, "/api/v1/claw/tasks?limit=20").get("tasks", [])
+        claw_leaderboard = _fetch_optional_api_json(api_base_url, "/api/v1/claw/leaderboard?limit=20").get("leaderboard", [])
         return {
             "source": "api",
             "api_base_url": api_base_url,
@@ -285,6 +287,8 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "kg_health": kg_health,
             "skills": skills,
             "skill_runs": skill_runs,
+            "claw_tasks": claw_tasks,
+            "claw_leaderboard": claw_leaderboard,
             "error": None,
         }
     except (OSError, TimeoutError, urllib.error.URLError, json.JSONDecodeError) as exc:
@@ -293,8 +297,12 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
         outbox_events = runner.repository.list_outbox_events(limit=20)
         list_agent_skills = getattr(runner.repository, "list_agent_skills", None)
         list_skill_runs = getattr(runner.repository, "list_skill_runs", None)
+        list_claw_tasks = getattr(runner.repository, "list_claw_tasks", None)
+        list_claw_leaderboard = getattr(runner.repository, "list_claw_leaderboard", None)
         skills = list_agent_skills(limit=20) if callable(list_agent_skills) else []
         skill_runs = list_skill_runs(limit=20) if callable(list_skill_runs) else []
+        claw_tasks = list_claw_tasks(limit=20) if callable(list_claw_tasks) else []
+        claw_leaderboard = list_claw_leaderboard(limit=20) if callable(list_claw_leaderboard) else []
         return {
             "source": "repository",
             "api_base_url": api_base_url,
@@ -305,6 +313,8 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "kg_health": {"status": "unknown", "backend": "unavailable"},
             "skills": skills,
             "skill_runs": skill_runs,
+            "claw_tasks": claw_tasks,
+            "claw_leaderboard": claw_leaderboard,
             "error": str(exc),
         }
 
@@ -1866,6 +1876,8 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         outbox_events = snapshot["outbox_events"]
         skills = snapshot.get("skills", [])
         skill_runs = snapshot.get("skill_runs", [])
+        claw_tasks = snapshot.get("claw_tasks", [])
+        claw_leaderboard = snapshot.get("claw_leaderboard", [])
     except Exception as exc:  # noqa: BLE001 - ops sidebar must fail softly.
         st.sidebar.warning("生产控制面状态读取失败。")
         st.sidebar.caption(str(exc))
@@ -1902,9 +1914,13 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
     pending_outbox = sum(1 for item in outbox_events if item.get("status") == "pending")
     enabled_skills = sum(1 for item in skills if item.get("enabled"))
     failed_skill_runs = sum(1 for item in skill_runs if item.get("status") == "failed")
+    claw_latest_failures = sum(1 for item in claw_leaderboard if item.get("latest_status") == "failed")
     st.sidebar.caption(f"Skill Runtime：{enabled_skills} 个启用 / 最近 {len(skill_runs)} 次运行")
     if failed_skill_runs:
         st.sidebar.warning(f"Skill 失败运行：{failed_skill_runs} 次")
+    st.sidebar.caption(f"Claw 评测中心：{len(claw_tasks)} 个任务 / {len(claw_leaderboard)} 条榜单")
+    if claw_latest_failures:
+        st.sidebar.warning(f"Claw 最新失败任务：{claw_latest_failures} 个")
     st.sidebar.caption(f"任务队列：{pending_tasks} 个待处理 / 最近 {len(tasks)} 条")
     st.sidebar.caption(f"审批队列：{pending_approvals} 个待处理 / 最近 {len(approvals)} 条")
     st.sidebar.caption(f"Outbox：{pending_outbox} 个待投递 / 最近 {len(outbox_events)} 条")
@@ -1919,6 +1935,8 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         st.json(kg_health)
         st.write("Skill Runtime")
         st.json({"skills": skills[:5], "recent_runs": skill_runs[:5]})
+        st.write("Claw 评测中心")
+        st.json({"tasks": claw_tasks[:5], "leaderboard": claw_leaderboard[:5]})
 
 
 def _render_ticket_kg_panel(ticket: TicketRecord) -> None:

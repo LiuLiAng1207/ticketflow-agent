@@ -1,0 +1,22 @@
+task_id: claw-query-ticket-evidence
+name: 查询工单证据链
+goal: 通过受控 Skill 查询工单并返回可追踪的工单信息，作为证据链查询的最小基准任务。
+category: ticket_ops
+pass_k: 3
+input:
+  operation: skill
+  skill_id: ticketflow-ops
+  skill_input:
+    operation: query_ticket
+    ticket_id: TCK-0006
+expected:
+  ticket_id: TCK-0006
+  required_result_keys:
+    - ticket
+allowed_tools:
+  - skill:ticketflow-ops
+forbidden_tools:
+  - shell
+  - sql:raw
+verifier:
+  type: deterministic

@@ -1,0 +1,22 @@
+task_id: claw-kg-explain-ticket
+name: 知识图谱解释工单
+goal: 使用 KG/Skill 解释工单处理原因，验证图谱只作为解释层，不替代 sufficiency 和审批治理。
+category: knowledge_graph
+pass_k: 3
+input:
+  operation: skill
+  skill_id: ticketflow-kg-memory
+  skill_input:
+    operation: explain_ticket
+    ticket_id: TCK-0006
+expected:
+  ticket_id: TCK-0006
+  required_result_keys:
+    - graph
+allowed_tools:
+  - skill:ticketflow-kg-memory
+forbidden_tools:
+  - shell
+  - sql:raw
+verifier:
+  type: deterministic

@@ -39,6 +39,7 @@ class ServiceSettings:
     skill_registry_backend: str = "repository"
     skills_dir: Path | None = None
     enable_skill_runtime: bool = True
+    claw_tasks_dir: Path | None = None
     neo4j_user: str | None = "neo4j"
     neo4j_password: str | None = None
     kg_backend: str = "disabled"
@@ -59,6 +60,13 @@ class ServiceSettings:
             source_tree_skills_dir = Path(__file__).resolve().parents[2] / raw_skills_dir
             if not skills_dir.exists() and source_tree_skills_dir.exists():
                 skills_dir = source_tree_skills_dir
+        raw_claw_tasks_dir = _get_env("CLAW_TASKS_DIR", overrides, "claw_tasks") or "claw_tasks"
+        claw_tasks_dir = Path(raw_claw_tasks_dir)
+        if not claw_tasks_dir.is_absolute():
+            claw_tasks_dir = root / claw_tasks_dir
+            source_tree_claw_tasks_dir = Path(__file__).resolve().parents[2] / raw_claw_tasks_dir
+            if not claw_tasks_dir.exists() and source_tree_claw_tasks_dir.exists():
+                claw_tasks_dir = source_tree_claw_tasks_dir
         return cls(
             project_root=root,
             app_env=app_env,
@@ -82,6 +90,7 @@ class ServiceSettings:
             ).strip().lower(),
             skills_dir=skills_dir.resolve(),
             enable_skill_runtime=_get_bool("ENABLE_SKILL_RUNTIME", True, overrides),
+            claw_tasks_dir=claw_tasks_dir.resolve(),
         )
 
     def readiness_payload(self, *, sqlite_db_path: Path | None = None) -> dict[str, object]:
@@ -117,6 +126,9 @@ class ServiceSettings:
                     "enabled": self.enable_skill_runtime,
                     "registry_backend": self.skill_registry_backend,
                     "skills_dir": str(self.skills_dir) if self.skills_dir else None,
+                },
+                "claw_harness": {
+                    "tasks_dir": str(self.claw_tasks_dir) if self.claw_tasks_dir else None,
                 },
             },
         }

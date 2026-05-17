@@ -204,14 +204,7 @@ class SkillRuntime:
         if skill_id == "ticketflow-batch-ops":
             return self._run_batch_ops(input_payload)
         if skill_id == "ticketflow-claw-eval":
-            return (
-                {
-                    "message": "Claw Harness runtime is registered but not enabled in this phase.",
-                    "next_phase": "production_claw_harness",
-                },
-                False,
-                [{"event_type": "skill_registered_only", "skill_id": skill_id}],
-            )
+            return self._run_claw_eval(input_payload)
         raise ValueError(f"No allowlisted executor for skill_id: {skill_id}")
 
     def _run_ticketflow_ops(
@@ -326,6 +319,20 @@ class SkillRuntime:
                 tasks.append(self.repository.create_workflow_task(ticket_id=ticket.ticket_id, mode="async"))
             return {"tasks": tasks, "count": len(tasks), "skipped_count": len(ticket_ids) - len(tasks)}, False, [{"event_type": "skill_batch_low_risk_started"}]
         raise ValueError(f"Unsupported ticketflow-batch-ops operation: {operation}")
+
+    def _run_claw_eval(self, input_payload: dict[str, Any]) -> tuple[dict[str, Any], bool, list[dict[str, Any]]]:
+        from .claw import ClawRegistry, ClawRuntime
+
+        settings = ServiceSettings.from_project_root(self.project_root, overrides=self.runner_overrides)
+        task_id = str(input_payload.get("task_id") or "claw-query-ticket-evidence")
+        pass_k = int(input_payload.get("pass_k") or 1)
+        ClawRegistry(self.repository, settings.claw_tasks_dir).reload()
+        result = ClawRuntime(
+            self.repository,
+            project_root=self.project_root,
+            runner_overrides=self.runner_overrides,
+        ).run_task(task_id, actor=str(input_payload.get("actor") or "skill-runtime"), pass_k=pass_k)
+        return {"claw_run": result.model_dump(mode="json")}, False, [{"event_type": "skill_claw_run", "task_id": task_id}]
 
     @staticmethod
     def _result_from_run(row: dict[str, object], audit_events: list[dict[str, Any]] | None = None) -> SkillRunResult:

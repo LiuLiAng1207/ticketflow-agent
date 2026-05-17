@@ -20,6 +20,7 @@ services:
       SKILL_REGISTRY_BACKEND: repository
       SKILLS_DIR: skills
       ENABLE_SKILL_RUNTIME: "true"
+      CLAW_TASKS_DIR: claw_tasks
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     ports:
@@ -51,6 +52,7 @@ services:
       SKILL_REGISTRY_BACKEND: repository
       SKILLS_DIR: skills
       ENABLE_SKILL_RUNTIME: "true"
+      CLAW_TASKS_DIR: claw_tasks
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     volumes:

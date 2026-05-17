@@ -11,6 +11,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 COPY data ./data
 COPY skills ./skills
+COPY claw_tasks ./claw_tasks
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir -e .

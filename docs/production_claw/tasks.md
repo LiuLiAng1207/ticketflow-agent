@@ -96,3 +96,13 @@
 - Added Skill API endpoints for reload, list, detail, enable, disable, run, and run history.
 - Added worker support for `run_skill` and conversational Agent routing through Skill Runtime for evidence-chain explanation and batch low-risk operations.
 - Streamlit production control panel now surfaces Skill Runtime status and recent runs.
+
+## Phase 10 Production Claw Harness
+
+- Added a Claw task contract based on `claw_tasks/*.yaml`.
+- Added repository-backed Claw task, run, attempt, trajectory, and score tables for SQLite and PostgreSQL.
+- Added deterministic Claw Runtime scoring for completion, safety, tool correctness, argument correctness, RAG grounding, approval correctness, and trajectory quality.
+- Added built-in tasks for ticket evidence query, chat-created tickets, governed refund workflow, approval inspection, and KG explanation.
+- Added Claw API endpoints for reload, task list, task detail, sync/async run, run detail, and leaderboard.
+- Added worker support for `run_claw_task` and Skill Runtime integration through `ticketflow-claw-eval`.
+- Streamlit production control panel now surfaces Claw task and leaderboard snapshots.

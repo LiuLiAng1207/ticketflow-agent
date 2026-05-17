@@ -31,3 +31,4 @@
 - Focused Phase 8 verification passed: `18 passed` across KG, API, worker, Agent, and ops-console tests.
 - Phase 9 Skill Runtime started: added Skill manifest loader, repository-backed registry, audited runtime, five built-in Skill packages, Skill API, worker `run_skill`, Agent skill routing, and ops-console visibility.
 - Focused Phase 9 verification passed: `43 passed`, `1 skipped` across API, worker, PostgreSQL contract, Agent, Skill Runtime, and ops-console tests.
+- Phase 10 Production Claw Harness started: added task manifest loading, repository-backed run/attempt/trajectory/score persistence, deterministic verifier scoring, five built-in benchmark tasks, Claw API, worker `run_claw_task`, Skill Runtime bridge, and ops-console visibility.
