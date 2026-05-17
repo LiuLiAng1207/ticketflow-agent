@@ -16,7 +16,6 @@ from .agents_llm import KnowledgeAgent, ResolutionAgent, TriageAgent
 from .attachments import AttachmentParser, attachment_evidence_to_doc
 from .checkpointing import build_checkpointer
 from .config import TicketFlowSettings
-from .db import TicketFlowRepository
 from .governance import build_action_route, get_tool_approval_policy
 from .intent import BertIntentRecognizer
 from .llm import OpenAICompatClient
@@ -36,7 +35,9 @@ from .models import (
     ToolApprovalPolicy,
 )
 from .rag import HybridRetriever
+from .repository import RepositoryProtocol, create_repository
 from .seed import build_seed_dataset
+from .service_settings import ServiceSettings
 from .tools import TicketTools
 
 
@@ -75,7 +76,7 @@ def _env_overrides(values: dict[str, str] | None):
 @dataclass(slots=True)
 class TicketFlowRunner:
     settings: TicketFlowSettings
-    repository: TicketFlowRepository
+    repository: RepositoryProtocol
     triage_agent: TriageAgent
     knowledge_agent: KnowledgeAgent
     resolution_agent: ResolutionAgent
@@ -92,8 +93,9 @@ class TicketFlowRunner:
         project_root = Path(project_root)
         with _env_overrides(overrides):
             settings = TicketFlowSettings.from_project_root(project_root)
+            service_settings = ServiceSettings.from_project_root(project_root)
 
-        repository = TicketFlowRepository(settings.db_path)
+        repository = create_repository(service_settings, sqlite_db_path=settings.db_path)
         seed_dir = settings.seed_dir
         if not (seed_dir / "tickets.csv").exists():
             build_seed_dataset(seed_dir)

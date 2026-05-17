@@ -43,3 +43,12 @@
 - Approval API decisions resume the stored workflow and complete or fail the associated task.
 - Outbox worker delivery writes external delivery records once and skips duplicate delivery attempts.
 - Streamlit production sidebar includes queued, running, and `waiting_approval` tasks in the pending count.
+
+## Phase 4 PostgreSQL Repository Parity
+
+- PostgreSQL schema now covers the business read path: customers, orders, tickets, KB articles, policies, reply templates, history, attachments, and attachment evidence.
+- PostgreSQL schema now covers the control plane: audit log, workflow tasks, approvals, outbox, idempotency keys, operation locks, and external email deliveries.
+- PostgreSQL repository exposes the same core workflow methods as SQLite for RAG reads, action tools, task state, durable approvals, outbox, and email delivery records.
+- Runner construction uses the repository factory, so production can switch with `DATABASE_BACKEND=postgres` and `DATABASE_URL=...`.
+- Docker Compose API and worker services now select PostgreSQL by default; `.env.example` keeps SQLite as a safe local fallback.
+- Optional live parity check: set `TEST_POSTGRES_DATABASE_URL` before running `tests/test_postgres_repository_contract.py`.

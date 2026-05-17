@@ -16,3 +16,8 @@
 - Verification passed after Phase 2 control-plane work: `94 passed`, `docker compose config ok`, `ticketflow-migrate --backend sqlite` ok.
 - Added real production loop wiring: async workflow tasks now enter `waiting_approval` on LangGraph interrupt, approval decisions resume the workflow through API, and outbox events can be delivered idempotently by worker code.
 - Updated README to describe the current API / Worker / Durable HITL / Outbox behavior in production-platform terms.
+- Phase 4 PostgreSQL repository parity started: PostgreSQL now defines business tables for customers, orders, tickets, KB, policies, history, attachments, audit, workflow tasks, approvals, outbox, idempotency, and external deliveries.
+- `TicketFlowRunner.from_project_root()` now uses the unified repository factory, so `DATABASE_BACKEND=postgres` selects `PostgresTicketFlowRepository` instead of hard-coded SQLite.
+- Docker Compose production services now set `DATABASE_BACKEND=postgres` for API and worker; SQLite remains the local `.env.example` fallback.
+- Added repository contract tests plus optional live PostgreSQL parity test gated by `TEST_POSTGRES_DATABASE_URL`.
+- Verification after Phase 4 repository parity: `100 passed`, `1 skipped` without a live PostgreSQL URL.

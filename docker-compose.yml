@@ -6,7 +6,7 @@ services:
       APP_ENV: production-skeleton
       API_HOST: 0.0.0.0
       API_PORT: 8000
-      DATABASE_BACKEND: sqlite
+      DATABASE_BACKEND: postgres
       DATABASE_URL: postgresql://ticketflow:ticketflow@postgres:5432/ticketflow
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -37,7 +37,7 @@ services:
     command: celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
     environment:
       APP_ENV: production-skeleton
-      DATABASE_BACKEND: sqlite
+      DATABASE_BACKEND: postgres
       DATABASE_URL: postgresql://ticketflow:ticketflow@postgres:5432/ticketflow
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
@@ -50,6 +50,8 @@ services:
     volumes:
       - ticketflow-generated:/app/data/generated
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
 
