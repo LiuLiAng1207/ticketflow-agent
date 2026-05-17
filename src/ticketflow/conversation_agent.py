@@ -7,6 +7,7 @@ from typing import Any
 
 from .models import TicketRecord
 from .repository import RepositoryProtocol
+from .skills import SkillRuntime
 from .worker import enqueue_run_ticket_workflow
 
 
@@ -79,6 +80,56 @@ def _response(
 def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]:
     normalized = message.strip()
     lowered = normalized.lower()
+    ticket_id = _extract_ticket_id(normalized)
+
+    if ticket_id and (
+        "skill" in lowered
+        or ("explain" in lowered and "evidence" in lowered)
+        or any(token in normalized for token in ("\u6280\u80fd", "\u8bc1\u636e\u94fe", "\u77e5\u8bc6\u56fe\u8c31"))
+    ):
+        result = SkillRuntime(
+            context.repository,
+            project_root=context.project_root,
+            runner_overrides=context.runner_overrides,
+            knowledge_graph_store=context.knowledge_graph_store,
+        ).run_skill(
+            "ticketflow-kg-memory",
+            input_payload={"operation": "explain_ticket", "ticket_id": ticket_id},
+            actor="conversation_agent",
+            ticket_id=ticket_id,
+        )
+        return _response(
+            intent="explain_ticket_graph",
+            reply=(
+                f"已通过 Skill Runtime 调用 ticketflow-kg-memory 知识图谱能力，为工单 {ticket_id} 生成证据链解释。"
+                "Skill 只负责解释和知识沉淀，不会绕过证据充分性、审批或工具治理。"
+            ),
+            data={
+                "ticket_id": ticket_id,
+                "graph": result.result.get("graph", {}),
+                "skill_run": result.model_dump(mode="json"),
+            },
+            actions=[{"type": "run_skill", "skill_id": "ticketflow-kg-memory"}],
+        )
+
+    if "batch" in lowered and "low" in lowered and "risk" in lowered:
+        ticket_ids = re.findall(r"\b(?:TCK|TICKET)-[A-Z0-9-]+\b", normalized, flags=re.IGNORECASE)
+        result = SkillRuntime(
+            context.repository,
+            project_root=context.project_root,
+            runner_overrides=context.runner_overrides,
+            knowledge_graph_store=context.knowledge_graph_store,
+        ).run_skill(
+            "ticketflow-batch-ops",
+            input_payload={"operation": "batch_run_low_risk", "ticket_ids": [item.upper() for item in ticket_ids]},
+            actor="conversation_agent",
+        )
+        return _response(
+            intent="run_skill",
+            reply="已通过 Skill Runtime 提交批量低风险工单处理；高风险工单会被跳过并保留原有治理链。",
+            data={"skill_run": result.model_dump(mode="json")},
+            actions=[{"type": "run_skill", "skill_id": "ticketflow-batch-ops"}],
+        )
 
     if any(token in normalized for token in ("直接批准", "批准所有", "绕过审批", "直接退款")):
         return _response(

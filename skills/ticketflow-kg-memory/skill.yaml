@@ -1,0 +1,17 @@
+skill_id: ticketflow-kg-memory
+name: TicketFlow 知识图谱记忆
+version: 1.0.0
+description: 重建工单知识图谱、解释证据链，并提交知识候选。
+risk_level: low
+enabled: true
+approval_required: false
+entrypoint: ticketflow.skills:ticketflow_kg_memory
+owner: ticketflow
+permissions:
+  - kg:read
+  - kg:write
+  - outbox:create
+tools:
+  - get_ticket_graph
+  - rebuild_ticket_graph
+  - create_kb_candidate_outbox

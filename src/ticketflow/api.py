@@ -15,6 +15,7 @@ from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
+from .skills import SkillRegistry, SkillRuntime
 from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_ticket_workflow
 
 
@@ -44,6 +45,13 @@ class AgentChatPayload(BaseModel):
     actor: str = "operator"
 
 
+class SkillRunPayload(BaseModel):
+    input: dict[str, Any] = Field(default_factory=dict)
+    actor: str = "operator"
+    ticket_id: str | None = None
+    idempotency_key: str | None = None
+
+
 def _model_payload(model: Any) -> dict[str, Any]:
     if hasattr(model, "model_dump"):
         return model.model_dump(mode="json")
@@ -67,6 +75,20 @@ def _get_kg_store(request: Request):
         kg_store = create_knowledge_graph_store(request.app.state.service_settings)
         request.app.state.kg_store = kg_store
     return kg_store
+
+
+def _get_skill_registry(request: Request) -> SkillRegistry:
+    return SkillRegistry(_get_runner(request).repository, request.app.state.service_settings.skills_dir)
+
+
+def _get_skill_runtime(request: Request) -> SkillRuntime:
+    runner = _get_runner(request)
+    return SkillRuntime(
+        runner.repository,
+        project_root=request.app.state.project_root,
+        runner_overrides=request.app.state.runner_overrides,
+        knowledge_graph_store=_get_kg_store(request),
+    )
 
 
 def _ticket_or_404(runner: TicketFlowRunner, ticket_id: str):
@@ -253,6 +275,7 @@ def create_app(
     @app.post("/api/v1/agent/chat")
     def agent_chat(payload: AgentChatPayload, request: Request) -> dict[str, object]:
         runner = _get_runner(request)
+        _get_skill_registry(request).reload()
         context = AgentChatContext(
             repository=runner.repository,
             project_root=request.app.state.project_root,
@@ -266,6 +289,64 @@ def create_app(
         result["session_id"] = payload.session_id
         result["actor"] = payload.actor
         return result
+
+    @app.get("/api/v1/skills")
+    def list_skills(request: Request, limit: int = Query(default=100, ge=1, le=500)) -> dict[str, object]:
+        runner = _get_runner(request)
+        skills = runner.repository.list_agent_skills(limit=limit)
+        return {"skills": skills, "count": len(skills)}
+
+    @app.post("/api/v1/skills/reload")
+    def reload_skills(request: Request) -> dict[str, object]:
+        return _get_skill_registry(request).reload()
+
+    @app.get("/api/v1/skills/runs")
+    def list_skill_runs(
+        request: Request,
+        skill_id: str | None = Query(default=None),
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> dict[str, object]:
+        runner = _get_runner(request)
+        runs = runner.repository.list_skill_runs(skill_id=skill_id, limit=limit)
+        return {"runs": runs, "count": len(runs)}
+
+    @app.get("/api/v1/skills/{skill_id}")
+    def get_skill(skill_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        skill = runner.repository.get_agent_skill(skill_id)
+        if skill is None:
+            raise HTTPException(status_code=404, detail=f"Unknown skill_id: {skill_id}")
+        return {"skill": skill}
+
+    @app.post("/api/v1/skills/{skill_id}/enable")
+    def enable_skill(skill_id: str, request: Request) -> dict[str, object]:
+        try:
+            skill = _get_runner(request).repository.set_agent_skill_enabled(skill_id, True)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return {"skill": skill}
+
+    @app.post("/api/v1/skills/{skill_id}/disable")
+    def disable_skill(skill_id: str, request: Request) -> dict[str, object]:
+        try:
+            skill = _get_runner(request).repository.set_agent_skill_enabled(skill_id, False)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return {"skill": skill}
+
+    @app.post("/api/v1/skills/{skill_id}/run")
+    def run_skill(skill_id: str, payload: SkillRunPayload, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        if runner.repository.get_agent_skill(skill_id) is None:
+            raise HTTPException(status_code=404, detail=f"Unknown skill_id: {skill_id}")
+        result = _get_skill_runtime(request).run_skill(
+            skill_id,
+            input_payload=payload.input,
+            actor=payload.actor,
+            ticket_id=payload.ticket_id,
+            idempotency_key=payload.idempotency_key,
+        )
+        return {"skill_run": result.model_dump(mode="json")}
 
     @app.get("/api/v1/kg/health")
     def kg_health(request: Request) -> dict[str, object]:

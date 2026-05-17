@@ -1,0 +1,16 @@
+skill_id: ticketflow-safety-governance
+name: TicketFlow 安全治理检查
+version: 1.0.0
+description: 只读查看工单治理链，包括审计、审批、证据充分性和回复事实校验记录。
+risk_level: low
+enabled: true
+approval_required: false
+entrypoint: ticketflow.skills:ticketflow_safety_governance
+owner: ticketflow
+permissions:
+  - audit:read
+  - approvals:read
+  - governance:read
+tools:
+  - list_audit_log
+  - list_approval_requests

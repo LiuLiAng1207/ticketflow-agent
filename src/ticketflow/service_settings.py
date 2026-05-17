@@ -36,6 +36,9 @@ class ServiceSettings:
     celery_broker_url: str | None
     celery_result_backend: str | None
     celery_task_always_eager: bool
+    skill_registry_backend: str = "repository"
+    skills_dir: Path | None = None
+    enable_skill_runtime: bool = True
     neo4j_user: str | None = "neo4j"
     neo4j_password: str | None = None
     kg_backend: str = "disabled"
@@ -49,6 +52,13 @@ class ServiceSettings:
         root = Path(project_root) if project_root is not None else Path.cwd()
         _load_local_env(root)
         app_env = _get_env("APP_ENV", overrides, "development") or "development"
+        raw_skills_dir = _get_env("SKILLS_DIR", overrides, "skills") or "skills"
+        skills_dir = Path(raw_skills_dir)
+        if not skills_dir.is_absolute():
+            skills_dir = root / skills_dir
+            source_tree_skills_dir = Path(__file__).resolve().parents[2] / raw_skills_dir
+            if not skills_dir.exists() and source_tree_skills_dir.exists():
+                skills_dir = source_tree_skills_dir
         return cls(
             project_root=root,
             app_env=app_env,
@@ -67,6 +77,11 @@ class ServiceSettings:
             celery_broker_url=_get_env("CELERY_BROKER_URL", overrides) or _get_env("REDIS_URL", overrides),
             celery_result_backend=_get_env("CELERY_RESULT_BACKEND", overrides) or _get_env("REDIS_URL", overrides),
             celery_task_always_eager=_get_bool("CELERY_TASK_ALWAYS_EAGER", app_env != "production", overrides),
+            skill_registry_backend=(
+                _get_env("SKILL_REGISTRY_BACKEND", overrides, "repository") or "repository"
+            ).strip().lower(),
+            skills_dir=skills_dir.resolve(),
+            enable_skill_runtime=_get_bool("ENABLE_SKILL_RUNTIME", True, overrides),
         )
 
     def readiness_payload(self, *, sqlite_db_path: Path | None = None) -> dict[str, object]:
@@ -97,6 +112,11 @@ class ServiceSettings:
                     "configured": bool(self.celery_broker_url),
                     "broker_url": self.celery_broker_url,
                     "task_always_eager": self.celery_task_always_eager,
+                },
+                "skill_runtime": {
+                    "enabled": self.enable_skill_runtime,
+                    "registry_backend": self.skill_registry_backend,
+                    "skills_dir": str(self.skills_dir) if self.skills_dir else None,
                 },
             },
         }

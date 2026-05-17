@@ -29,3 +29,5 @@
 - Phase 7 conversational ticket Agent started: added `/api/v1/agent/chat` for safe ticket querying, ticket creation, workflow launch, approval queue inspection, Outbox inspection, and knowledge-candidate submission.
 - Phase 8 Knowledge Graph foundation started: added KG store abstraction, idempotent ticket graph builder, KG API endpoints, worker rebuild task, conversational evidence-chain explanation intent, and Streamlit KG visibility.
 - Focused Phase 8 verification passed: `18 passed` across KG, API, worker, Agent, and ops-console tests.
+- Phase 9 Skill Runtime started: added Skill manifest loader, repository-backed registry, audited runtime, five built-in Skill packages, Skill API, worker `run_skill`, Agent skill routing, and ops-console visibility.
+- Focused Phase 9 verification passed: `43 passed`, `1 skipped` across API, worker, PostgreSQL contract, Agent, Skill Runtime, and ops-console tests.

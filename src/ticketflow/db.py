@@ -252,6 +252,52 @@ CREATE TABLE IF NOT EXISTS approval_decisions (
     edited_action TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS agent_skills (
+    skill_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    risk_level TEXT NOT NULL,
+    enabled INTEGER NOT NULL,
+    approval_required INTEGER NOT NULL,
+    current_version TEXT NOT NULL,
+    manifest TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS skill_versions (
+    skill_id TEXT NOT NULL,
+    version TEXT NOT NULL,
+    manifest TEXT NOT NULL,
+    skill_doc TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(skill_id, version)
+);
+
+CREATE TABLE IF NOT EXISTS skill_permissions (
+    skill_id TEXT NOT NULL,
+    permission TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(skill_id, permission)
+);
+
+CREATE TABLE IF NOT EXISTS skill_runs (
+    run_id TEXT PRIMARY KEY,
+    skill_id TEXT NOT NULL,
+    version TEXT,
+    actor TEXT NOT NULL,
+    ticket_id TEXT,
+    status TEXT NOT NULL,
+    input_payload TEXT NOT NULL,
+    result_payload TEXT NOT NULL DEFAULT '{}',
+    error_message TEXT,
+    requires_approval INTEGER NOT NULL DEFAULT 0,
+    idempotency_key TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
 """
 
 
@@ -366,6 +412,7 @@ class TicketFlowRepository:
             conn.execute("DELETE FROM refund_requests")
             conn.execute("DELETE FROM audit_log")
             conn.execute("DELETE FROM external_email_deliveries")
+            conn.execute("DELETE FROM skill_runs")
             conn.commit()
 
     def list_open_tickets(self, limit: int = 50) -> list[TicketRecord]:
@@ -1315,3 +1362,212 @@ class TicketFlowRepository:
                 )
             )
         return records
+
+    @staticmethod
+    def _skill_from_row(row: sqlite3.Row) -> dict[str, object]:
+        return {
+            "skill_id": row["skill_id"],
+            "name": row["name"],
+            "description": row["description"],
+            "risk_level": row["risk_level"],
+            "enabled": bool(row["enabled"]),
+            "approval_required": bool(row["approval_required"]),
+            "current_version": row["current_version"],
+            "manifest": _json_load(row["manifest"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+    @staticmethod
+    def _skill_run_from_row(row: sqlite3.Row) -> dict[str, object]:
+        return {
+            "run_id": row["run_id"],
+            "skill_id": row["skill_id"],
+            "version": row["version"],
+            "actor": row["actor"],
+            "ticket_id": row["ticket_id"],
+            "status": row["status"],
+            "input_payload": _json_load(row["input_payload"]),
+            "result_payload": _json_load(row["result_payload"]),
+            "error_message": row["error_message"],
+            "requires_approval": bool(row["requires_approval"]),
+            "idempotency_key": row["idempotency_key"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "completed_at": row["completed_at"],
+        }
+
+    def upsert_agent_skill(self, manifest: dict[str, object], skill_doc: str = "") -> dict[str, object]:
+        now = _utc_now()
+        skill_id = str(manifest["skill_id"])
+        version = str(manifest["version"])
+        permissions = [str(item) for item in manifest.get("permissions", [])]
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO agent_skills
+                (skill_id, name, description, risk_level, enabled, approval_required, current_version, manifest, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(skill_id) DO UPDATE SET
+                    name = excluded.name,
+                    description = excluded.description,
+                    risk_level = excluded.risk_level,
+                    approval_required = excluded.approval_required,
+                    current_version = excluded.current_version,
+                    manifest = excluded.manifest,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    skill_id,
+                    str(manifest["name"]),
+                    str(manifest["description"]),
+                    str(manifest["risk_level"]),
+                    1 if bool(manifest.get("enabled", True)) else 0,
+                    1 if bool(manifest.get("approval_required", False)) else 0,
+                    version,
+                    _json_dump(manifest),
+                    now,
+                    now,
+                ),
+            )
+            conn.execute(
+                """
+                INSERT INTO skill_versions (skill_id, version, manifest, skill_doc, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(skill_id, version) DO UPDATE SET
+                    manifest = excluded.manifest,
+                    skill_doc = excluded.skill_doc
+                """,
+                (skill_id, version, _json_dump(manifest), skill_doc, now),
+            )
+            conn.execute("DELETE FROM skill_permissions WHERE skill_id = ?", (skill_id,))
+            conn.executemany(
+                "INSERT INTO skill_permissions (skill_id, permission, created_at) VALUES (?, ?, ?)",
+                [(skill_id, permission, now) for permission in permissions],
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM agent_skills WHERE skill_id = ?", (skill_id,)).fetchone()
+        assert row is not None
+        return self._skill_from_row(row)
+
+    def list_agent_skills(self, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM agent_skills ORDER BY skill_id ASC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [self._skill_from_row(row) for row in rows]
+
+    def get_agent_skill(self, skill_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM agent_skills WHERE skill_id = ?", (skill_id,)).fetchone()
+        return self._skill_from_row(row) if row else None
+
+    def set_agent_skill_enabled(self, skill_id: str, enabled: bool) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE agent_skills SET enabled = ?, updated_at = ? WHERE skill_id = ?",
+                (1 if enabled else 0, now, skill_id),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM agent_skills WHERE skill_id = ?", (skill_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"Unknown skill_id: {skill_id}")
+        return self._skill_from_row(row)
+
+    def create_skill_run(
+        self,
+        *,
+        skill_id: str,
+        version: str | None,
+        actor: str,
+        ticket_id: str | None,
+        input_payload: dict[str, object],
+        status: str = "running",
+        result_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+        requires_approval: bool = False,
+        idempotency_key: str | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        run_id = f"skillrun-{uuid4().hex}"
+        completed_at = now if status in {"succeeded", "failed", "rejected"} else None
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO skill_runs
+                (run_id, skill_id, version, actor, ticket_id, status, input_payload, result_payload, error_message,
+                 requires_approval, idempotency_key, created_at, updated_at, completed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    skill_id,
+                    version,
+                    actor,
+                    ticket_id,
+                    status,
+                    _json_dump(input_payload),
+                    _json_dump(result_payload),
+                    error_message,
+                    1 if requires_approval else 0,
+                    idempotency_key,
+                    now,
+                    now,
+                    completed_at,
+                ),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM skill_runs WHERE run_id = ?", (run_id,)).fetchone()
+        assert row is not None
+        return self._skill_run_from_row(row)
+
+    def update_skill_run(
+        self,
+        run_id: str,
+        *,
+        status: str,
+        result_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+        requires_approval: bool = False,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        completed_at = now if status in {"succeeded", "failed", "rejected"} else None
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE skill_runs
+                SET status = ?, result_payload = ?, error_message = ?, requires_approval = ?,
+                    updated_at = ?, completed_at = ?
+                WHERE run_id = ?
+                """,
+                (
+                    status,
+                    _json_dump(result_payload),
+                    error_message,
+                    1 if requires_approval else 0,
+                    now,
+                    completed_at,
+                    run_id,
+                ),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM skill_runs WHERE run_id = ?", (run_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"Unknown run_id: {run_id}")
+        return self._skill_run_from_row(row)
+
+    def list_skill_runs(self, skill_id: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if skill_id is None:
+                rows = conn.execute(
+                    "SELECT * FROM skill_runs ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM skill_runs WHERE skill_id = ? ORDER BY created_at DESC LIMIT ?",
+                    (skill_id, limit),
+                ).fetchall()
+        return [self._skill_run_from_row(row) for row in rows]

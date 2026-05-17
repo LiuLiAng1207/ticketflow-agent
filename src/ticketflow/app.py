@@ -247,6 +247,13 @@ def _fetch_api_json(base_url: str, path: str, *, timeout: float = 1.5) -> dict[s
         return json.loads(response.read().decode("utf-8"))
 
 
+def _fetch_optional_api_json(base_url: str, path: str, *, timeout: float = 1.5) -> dict[str, Any]:
+    try:
+        return _fetch_api_json(base_url, path, timeout=timeout)
+    except Exception:  # noqa: BLE001 - optional ops widgets must not break the control plane.
+        return {}
+
+
 def _post_api_json(base_url: str, path: str, *, timeout: float = 3.0) -> dict[str, Any]:
     request = urllib.request.Request(
         f"{base_url.rstrip('/')}{path}",
@@ -266,6 +273,8 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
         approvals = _fetch_api_json(api_base_url, "/api/v1/approvals?limit=20").get("approvals", [])
         outbox_events = _fetch_api_json(api_base_url, "/api/v1/outbox?limit=20").get("events", [])
         kg_health = _fetch_api_json(api_base_url, "/api/v1/kg/health")
+        skills = _fetch_optional_api_json(api_base_url, "/api/v1/skills?limit=20").get("skills", [])
+        skill_runs = _fetch_optional_api_json(api_base_url, "/api/v1/skills/runs?limit=20").get("runs", [])
         return {
             "source": "api",
             "api_base_url": api_base_url,
@@ -274,12 +283,18 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "approvals": approvals,
             "outbox_events": outbox_events,
             "kg_health": kg_health,
+            "skills": skills,
+            "skill_runs": skill_runs,
             "error": None,
         }
     except (OSError, TimeoutError, urllib.error.URLError, json.JSONDecodeError) as exc:
         tasks = runner.repository.list_workflow_tasks(limit=20)
         approvals = runner.repository.list_approval_requests(limit=20)
         outbox_events = runner.repository.list_outbox_events(limit=20)
+        list_agent_skills = getattr(runner.repository, "list_agent_skills", None)
+        list_skill_runs = getattr(runner.repository, "list_skill_runs", None)
+        skills = list_agent_skills(limit=20) if callable(list_agent_skills) else []
+        skill_runs = list_skill_runs(limit=20) if callable(list_skill_runs) else []
         return {
             "source": "repository",
             "api_base_url": api_base_url,
@@ -288,6 +303,8 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "approvals": approvals,
             "outbox_events": outbox_events,
             "kg_health": {"status": "unknown", "backend": "unavailable"},
+            "skills": skills,
+            "skill_runs": skill_runs,
             "error": str(exc),
         }
 
@@ -1823,6 +1840,11 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
     pending_tasks = sum(1 for item in tasks if item.get("status") in {"queued", "running"})
     pending_approvals = sum(1 for item in approvals if item.get("status") == "pending")
     pending_outbox = sum(1 for item in outbox_events if item.get("status") == "pending")
+    enabled_skills = sum(1 for item in skills if item.get("enabled"))
+    failed_skill_runs = sum(1 for item in skill_runs if item.get("status") == "failed")
+    st.sidebar.caption(f"Skill Runtime：{enabled_skills} 个启用 / 最近 {len(skill_runs)} 次运行")
+    if failed_skill_runs:
+        st.sidebar.warning(f"Skill 失败运行：{failed_skill_runs} 次")
     st.sidebar.caption(f"任务队列：{pending_tasks} 个待处理 / 最近 {len(tasks)} 条")
     st.sidebar.caption(f"审批队列：{pending_approvals} 个待处理 / 最近 {len(approvals)} 条")
     st.sidebar.caption(f"Outbox：{pending_outbox} 个待投递 / 最近 {len(outbox_events)} 条")
@@ -1842,6 +1864,8 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         tasks = snapshot["tasks"]
         approvals = snapshot["approvals"]
         outbox_events = snapshot["outbox_events"]
+        skills = snapshot.get("skills", [])
+        skill_runs = snapshot.get("skill_runs", [])
     except Exception as exc:  # noqa: BLE001 - ops sidebar must fail softly.
         st.sidebar.warning("生产控制面状态读取失败。")
         st.sidebar.caption(str(exc))
@@ -1876,6 +1900,11 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
     pending_tasks = sum(1 for item in tasks if item.get("status") in {"queued", "running", "waiting_approval"})
     pending_approvals = sum(1 for item in approvals if item.get("status") == "pending")
     pending_outbox = sum(1 for item in outbox_events if item.get("status") == "pending")
+    enabled_skills = sum(1 for item in skills if item.get("enabled"))
+    failed_skill_runs = sum(1 for item in skill_runs if item.get("status") == "failed")
+    st.sidebar.caption(f"Skill Runtime：{enabled_skills} 个启用 / 最近 {len(skill_runs)} 次运行")
+    if failed_skill_runs:
+        st.sidebar.warning(f"Skill 失败运行：{failed_skill_runs} 次")
     st.sidebar.caption(f"任务队列：{pending_tasks} 个待处理 / 最近 {len(tasks)} 条")
     st.sidebar.caption(f"审批队列：{pending_approvals} 个待处理 / 最近 {len(approvals)} 条")
     st.sidebar.caption(f"Outbox：{pending_outbox} 个待投递 / 最近 {len(outbox_events)} 条")
@@ -1888,6 +1917,8 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         st.json(outbox_events[:5])
         st.write("知识图谱健康状态")
         st.json(kg_health)
+        st.write("Skill Runtime")
+        st.json({"skills": skills[:5], "recent_runs": skill_runs[:5]})
 
 
 def _render_ticket_kg_panel(ticket: TicketRecord) -> None:

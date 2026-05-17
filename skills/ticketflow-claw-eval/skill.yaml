@@ -1,0 +1,14 @@
+skill_id: ticketflow-claw-eval
+name: TicketFlow Claw 评测入口
+version: 1.0.0
+description: 预留 Claw 风格评测任务入口；本阶段只注册能力，不执行完整评测。
+risk_level: medium
+enabled: true
+approval_required: false
+entrypoint: ticketflow.skills:ticketflow_claw_eval
+owner: ticketflow
+permissions:
+  - claw:read
+  - claw:run_stub
+tools:
+  - run_claw_task_stub

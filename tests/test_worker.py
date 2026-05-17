@@ -24,6 +24,7 @@ def test_worker_registry_contains_first_wave_tasks():
         "send_outbox_email",
         "run_claw_task",
         "build_knowledge_graph",
+        "run_skill",
     }
 
 

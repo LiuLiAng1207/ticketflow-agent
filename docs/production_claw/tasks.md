@@ -86,3 +86,13 @@
 - Added conversational Agent intent for explaining a ticket decision and evidence chain through the graph.
 - Added Streamlit ops visibility for KG health and a per-ticket knowledge graph explanation panel.
 - KG is an explanation and retrieval aid only; it does not bypass sufficiency checks, tool approval, or durable HITL.
+
+## Phase 9 Skill Runtime
+
+- Added a Skill package contract based on `skill.yaml` and `SKILL.md`.
+- Added repository-backed Skill Registry tables and methods for SQLite and PostgreSQL.
+- Added audited Skill Runtime execution with enable/disable checks, allowlisted executors, idempotency hook, and `skill_runs`.
+- Added built-in skills: `ticketflow-ops`, `ticketflow-kg-memory`, `ticketflow-safety-governance`, `ticketflow-batch-ops`, and `ticketflow-claw-eval`.
+- Added Skill API endpoints for reload, list, detail, enable, disable, run, and run history.
+- Added worker support for `run_skill` and conversational Agent routing through Skill Runtime for evidence-chain explanation and batch low-risk operations.
+- Streamlit production control panel now surfaces Skill Runtime status and recent runs.

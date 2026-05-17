@@ -10,6 +10,7 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
 COPY data ./data
+COPY skills ./skills
 
 RUN python -m pip install --no-cache-dir --upgrade pip \
     && python -m pip install --no-cache-dir -e .

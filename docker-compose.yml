@@ -17,6 +17,9 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: ticketflow-password
       KG_BACKEND: neo4j
+      SKILL_REGISTRY_BACKEND: repository
+      SKILLS_DIR: skills
+      ENABLE_SKILL_RUNTIME: "true"
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     ports:
@@ -45,6 +48,9 @@ services:
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: ticketflow-password
       KG_BACKEND: neo4j
+      SKILL_REGISTRY_BACKEND: repository
+      SKILLS_DIR: skills
+      ENABLE_SKILL_RUNTIME: "true"
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     volumes:

@@ -15,6 +15,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only in partially in
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .service_settings import ServiceSettings
+from .skills import SkillRegistry, SkillRuntime
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +45,11 @@ TASK_REGISTRY: dict[str, WorkerTask] = {
         task_name="build_knowledge_graph",
         description="Build or refresh knowledge graph edges from ticket evidence.",
         queue="knowledge_graph",
+    ),
+    "run_skill": WorkerTask(
+        task_name="run_skill",
+        description="Run an allowlisted TicketFlow Skill through the audited Skill Runtime.",
+        queue="skills",
     ),
 }
 
@@ -224,6 +230,60 @@ def build_knowledge_graph_task(
         ticket_id=ticket_id,
         project_root=project_root,
         task_id=task_id,
+        runner_overrides=runner_overrides,
+    )
+
+
+def run_skill_now(
+    *,
+    skill_id: str,
+    input_payload: dict[str, Any],
+    actor: str,
+    project_root: str | Path,
+    ticket_id: str | None = None,
+    idempotency_key: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
+    store = create_knowledge_graph_store(settings)
+    try:
+        SkillRegistry(runner.repository, settings.skills_dir).reload()
+        result = SkillRuntime(
+            runner.repository,
+            project_root=project_root,
+            runner_overrides=runner_overrides,
+            knowledge_graph_store=store,
+        ).run_skill(
+            skill_id,
+            input_payload=input_payload,
+            actor=actor,
+            ticket_id=ticket_id,
+            idempotency_key=idempotency_key,
+        )
+        return result.model_dump(mode="json")
+    finally:
+        store.close()
+        runner.close()
+
+
+@celery_app.task(name="ticketflow.run_skill")
+def run_skill_task(
+    skill_id: str,
+    input_payload: dict[str, Any],
+    actor: str,
+    project_root: str,
+    ticket_id: str | None = None,
+    idempotency_key: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    return run_skill_now(
+        skill_id=skill_id,
+        input_payload=input_payload,
+        actor=actor,
+        ticket_id=ticket_id,
+        idempotency_key=idempotency_key,
+        project_root=project_root,
         runner_overrides=runner_overrides,
     )
 

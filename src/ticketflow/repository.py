@@ -59,6 +59,16 @@ class RepositoryProtocol(Protocol):
         payload: dict[str, object],
     ) -> dict[str, object]: ...
 
+    def record_idempotency_key(
+        self,
+        *,
+        key_scope: str,
+        key_value: str,
+        request_hash: str,
+        response_payload: dict[str, object],
+        status: str = "completed",
+    ) -> dict[str, object]: ...
+
     def create_approval_request(
         self,
         *,
@@ -70,6 +80,41 @@ class RepositoryProtocol(Protocol):
         requested_by: str,
         expires_at: str | None = None,
     ) -> dict[str, object]: ...
+
+    def upsert_agent_skill(self, manifest: dict[str, object], skill_doc: str = "") -> dict[str, object]: ...
+
+    def list_agent_skills(self, limit: int = 100) -> list[dict[str, object]]: ...
+
+    def get_agent_skill(self, skill_id: str) -> dict[str, object] | None: ...
+
+    def set_agent_skill_enabled(self, skill_id: str, enabled: bool) -> dict[str, object]: ...
+
+    def create_skill_run(
+        self,
+        *,
+        skill_id: str,
+        version: str | None,
+        actor: str,
+        ticket_id: str | None,
+        input_payload: dict[str, object],
+        status: str = "running",
+        result_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+        requires_approval: bool = False,
+        idempotency_key: str | None = None,
+    ) -> dict[str, object]: ...
+
+    def update_skill_run(
+        self,
+        run_id: str,
+        *,
+        status: str,
+        result_payload: dict[str, object] | None = None,
+        error_message: str | None = None,
+        requires_approval: bool = False,
+    ) -> dict[str, object]: ...
+
+    def list_skill_runs(self, skill_id: str | None = None, limit: int = 100) -> list[dict[str, object]]: ...
 
 
 def create_repository(settings: ServiceSettings, *, sqlite_db_path: Path | None = None) -> RepositoryProtocol:

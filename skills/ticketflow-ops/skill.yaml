@@ -1,0 +1,20 @@
+skill_id: ticketflow-ops
+name: TicketFlow 工单运维
+version: 1.0.0
+description: 查询工单、查看审批队列、查看 Outbox，并按治理链启动工单工作流。
+risk_level: medium
+enabled: true
+approval_required: false
+entrypoint: ticketflow.skills:ticketflow_ops
+owner: ticketflow
+permissions:
+  - tickets:read
+  - tasks:create
+  - approvals:read
+  - outbox:read
+tools:
+  - get_ticket
+  - list_tickets
+  - create_workflow_task
+  - list_approvals
+  - list_outbox

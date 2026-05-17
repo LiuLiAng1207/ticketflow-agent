@@ -41,6 +41,13 @@ ticketflow-api
 - `POST /api/v1/kg/tickets/{ticket_id}/rebuild`
 - `GET /api/v1/kg/tickets/{ticket_id}`
 - `GET /api/v1/kg/search`
+- `GET /api/v1/skills`
+- `GET /api/v1/skills/{skill_id}`
+- `POST /api/v1/skills/reload`
+- `POST /api/v1/skills/{skill_id}/enable`
+- `POST /api/v1/skills/{skill_id}/disable`
+- `POST /api/v1/skills/{skill_id}/run`
+- `GET /api/v1/skills/runs`
 
 默认异步运行会返回 `task_id`。如果工作流遇到退款或升级等敏感工具审批，任务会进入 `waiting_approval`，审批通过后 API 会自动 resume workflow 并更新任务状态。
 
@@ -58,8 +65,11 @@ celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
 - `send_outbox_email`
 - `run_claw_task`
 - `build_knowledge_graph`
+- `run_skill`
 
 `build_knowledge_graph` rebuilds a ticket-level business graph from the current repository state. The graph is used for evidence-chain explanation, audit review, and future GraphRAG retrieval; it does not replace sufficiency checks or approval controls.
+
+`run_skill` executes only allowlisted TicketFlow skills. Skills are registered from `skills/<skill_id>/skill.yaml` and `SKILL.md`, persisted through the repository backend, and audited through `skill_runs`. Skill Runtime is a governance layer, not an arbitrary code execution surface.
 
 ## Docker Compose
 
@@ -109,6 +119,9 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
 CELERY_TASK_ALWAYS_EAGER=true
 ENABLE_PRODUCTION_SERVICES=false
+SKILL_REGISTRY_BACKEND=repository
+SKILLS_DIR=skills
+ENABLE_SKILL_RUNTIME=true
 ```
 
 Docker Compose 中 `CELERY_TASK_ALWAYS_EAGER=false`，worker 会通过 Redis broker 消费任务。

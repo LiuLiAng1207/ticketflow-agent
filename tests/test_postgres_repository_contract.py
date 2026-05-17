@@ -28,6 +28,10 @@ REQUIRED_TABLES = {
     "external_operation_locks",
     "approval_requests",
     "approval_decisions",
+    "agent_skills",
+    "skill_versions",
+    "skill_permissions",
+    "skill_runs",
 }
 
 REQUIRED_METHODS = {
@@ -68,6 +72,13 @@ REQUIRED_METHODS = {
     "record_approval_decision",
     "create_external_email_delivery",
     "list_external_email_deliveries",
+    "upsert_agent_skill",
+    "list_agent_skills",
+    "get_agent_skill",
+    "set_agent_skill_enabled",
+    "create_skill_run",
+    "update_skill_run",
+    "list_skill_runs",
 }
 
 

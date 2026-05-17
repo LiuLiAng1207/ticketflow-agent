@@ -1,0 +1,15 @@
+skill_id: ticketflow-batch-ops
+name: TicketFlow 批量工单处理
+version: 1.0.0
+description: 批量查询工单，并仅对低风险工单创建处理任务。
+risk_level: elevated
+enabled: true
+approval_required: false
+entrypoint: ticketflow.skills:ticketflow_batch_ops
+owner: ticketflow
+permissions:
+  - tickets:read
+  - tasks:create_low_risk
+tools:
+  - batch_query
+  - batch_run_low_risk
