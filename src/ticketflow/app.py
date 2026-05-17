@@ -1715,6 +1715,32 @@ def _run_ticket_for_ui(runner: Any, ticket_id: str) -> tuple[Any | None, str | N
         return None, f"工作流运行失败：{reason}。{suggestion}（技术原因：{exc_name}）"
 
 
+def _render_production_control_panel(runner: TicketFlowRunner) -> None:
+    st.sidebar.markdown("**生产控制面**")
+    try:
+        tasks = runner.repository.list_workflow_tasks(limit=20)
+        approvals = runner.repository.list_approval_requests(limit=20)
+        outbox_events = runner.repository.list_outbox_events(limit=20)
+    except Exception as exc:  # noqa: BLE001 - ops sidebar must fail softly.
+        st.sidebar.warning("生产控制面状态读取失败")
+        st.sidebar.caption(str(exc))
+        return
+
+    pending_tasks = sum(1 for item in tasks if item.get("status") in {"queued", "running"})
+    pending_approvals = sum(1 for item in approvals if item.get("status") == "pending")
+    pending_outbox = sum(1 for item in outbox_events if item.get("status") == "pending")
+    st.sidebar.caption(f"任务队列：{pending_tasks} 个待处理 / 最近 {len(tasks)} 条")
+    st.sidebar.caption(f"审批队列：{pending_approvals} 个待处理 / 最近 {len(approvals)} 条")
+    st.sidebar.caption(f"Outbox：{pending_outbox} 个待投递 / 最近 {len(outbox_events)} 条")
+    with st.sidebar.expander("查看生产控制面快照", expanded=False):
+        st.write("最近任务")
+        st.json(tasks[:5])
+        st.write("最近审批")
+        st.json(approvals[:5])
+        st.write("最近 Outbox")
+        st.json(outbox_events[:5])
+
+
 def _render_runtime_mode(runner: TicketFlowRunner) -> None:
     settings = runner.settings
     _render_model_backend_switch(runner)
@@ -1771,6 +1797,7 @@ def main() -> None:
 
     st.sidebar.title("工作台设置")
     _render_runtime_mode(runner)
+    _render_production_control_panel(runner)
     _render_minimind_control_panel(_project_root())
     if st.sidebar.button("重置演示数据", type="primary"):
         runner.reset_demo_data()

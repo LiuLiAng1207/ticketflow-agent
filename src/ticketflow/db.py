@@ -6,6 +6,7 @@ import json
 import re
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 from uuid import uuid4
@@ -176,7 +177,99 @@ CREATE TABLE IF NOT EXISTS external_email_deliveries (
     payload TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS workflow_tasks (
+    task_id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL,
+    thread_id TEXT,
+    status TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    celery_task_id TEXT,
+    result_json TEXT NOT NULL DEFAULT '{}',
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    started_at TEXT,
+    completed_at TEXT,
+    cancelled_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS outbox_events (
+    event_id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL,
+    operation_type TEXT NOT NULL,
+    business_key TEXT NOT NULL,
+    status TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    delivered_at TEXT,
+    UNIQUE(ticket_id, operation_type, business_key)
+);
+
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+    key_scope TEXT NOT NULL,
+    key_value TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    status TEXT NOT NULL,
+    response_payload TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY(key_scope, key_value)
+);
+
+CREATE TABLE IF NOT EXISTS external_operation_locks (
+    lock_key TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL,
+    operation_type TEXT NOT NULL,
+    acquired_by TEXT NOT NULL,
+    expires_at TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS approval_requests (
+    approval_id TEXT PRIMARY KEY,
+    ticket_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    tool_name TEXT NOT NULL,
+    tool_args TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    status TEXT NOT NULL,
+    requested_by TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    expires_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS approval_decisions (
+    decision_id TEXT PRIMARY KEY,
+    approval_id TEXT NOT NULL,
+    decision TEXT NOT NULL,
+    reviewer TEXT NOT NULL,
+    comment TEXT,
+    edited_action TEXT,
+    created_at TEXT NOT NULL
+);
 """
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _json_dump(payload: dict[str, object] | list[object] | None) -> str:
+    return json.dumps(payload or {}, ensure_ascii=False)
+
+
+def _json_load(raw: str | None) -> object:
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"raw": raw}
 
 
 class TicketFlowRepository:
@@ -613,6 +706,434 @@ class TicketFlowRepository:
                 }
             )
         return events
+
+    @staticmethod
+    def _workflow_task_from_row(row: sqlite3.Row) -> dict[str, object]:
+        return {
+            "task_id": row["task_id"],
+            "ticket_id": row["ticket_id"],
+            "thread_id": row["thread_id"],
+            "status": row["status"],
+            "mode": row["mode"],
+            "celery_task_id": row["celery_task_id"],
+            "result": _json_load(row["result_json"]),
+            "error_message": row["error_message"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "started_at": row["started_at"],
+            "completed_at": row["completed_at"],
+            "cancelled_at": row["cancelled_at"],
+        }
+
+    def create_workflow_task(self, ticket_id: str, mode: str, thread_id: str | None = None) -> dict[str, object]:
+        task_id = f"task-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO workflow_tasks
+                (task_id, ticket_id, thread_id, status, mode, created_at, updated_at)
+                VALUES (?, ?, ?, 'queued', ?, ?, ?)
+                """,
+                (task_id, ticket_id, thread_id, mode, now, now),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        assert task is not None
+        return task
+
+    def get_workflow_task(self, task_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM workflow_tasks WHERE task_id = ?", (task_id,)).fetchone()
+        if row is None:
+            return None
+        return self._workflow_task_from_row(row)
+
+    def list_workflow_tasks(self, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM workflow_tasks ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [self._workflow_task_from_row(row) for row in rows]
+
+    def mark_workflow_task_running(self, task_id: str, celery_task_id: str | None = None) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE workflow_tasks
+                SET status = 'running', celery_task_id = COALESCE(?, celery_task_id),
+                    started_at = COALESCE(started_at, ?), updated_at = ?
+                WHERE task_id = ?
+                """,
+                (celery_task_id, now, now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    def set_workflow_task_celery_id(self, task_id: str, celery_task_id: str) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                "UPDATE workflow_tasks SET celery_task_id = ?, updated_at = ? WHERE task_id = ?",
+                (celery_task_id, now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    def complete_workflow_task(self, task_id: str, result: dict[str, object]) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE workflow_tasks
+                SET status = 'succeeded', result_json = ?, error_message = NULL,
+                    completed_at = ?, updated_at = ?
+                WHERE task_id = ?
+                """,
+                (_json_dump(result), now, now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    def fail_workflow_task(self, task_id: str, error_message: str) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE workflow_tasks
+                SET status = 'failed', error_message = ?, completed_at = ?, updated_at = ?
+                WHERE task_id = ?
+                """,
+                (error_message, now, now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    def cancel_workflow_task(self, task_id: str, reason: str = "cancelled") -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE workflow_tasks
+                SET status = 'cancelled', error_message = ?, cancelled_at = ?, updated_at = ?
+                WHERE task_id = ?
+                """,
+                (reason, now, now, task_id),
+            )
+            conn.commit()
+        task = self.get_workflow_task(task_id)
+        if task is None:
+            raise KeyError(f"Unknown task_id: {task_id}")
+        return task
+
+    @staticmethod
+    def _outbox_event_from_row(row: sqlite3.Row, *, deduplicated: bool = False) -> dict[str, object]:
+        return {
+            "event_id": row["event_id"],
+            "ticket_id": row["ticket_id"],
+            "operation_type": row["operation_type"],
+            "business_key": row["business_key"],
+            "status": row["status"],
+            "payload": _json_load(row["payload"]),
+            "attempts": row["attempts"],
+            "last_error": row["last_error"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "delivered_at": row["delivered_at"],
+            "deduplicated": deduplicated,
+        }
+
+    def create_outbox_event(
+        self,
+        *,
+        ticket_id: str,
+        operation_type: str,
+        business_key: str,
+        payload: dict[str, object],
+    ) -> dict[str, object]:
+        event_id = f"outbox-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO outbox_events
+                    (event_id, ticket_id, operation_type, business_key, status, payload, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)
+                    """,
+                    (event_id, ticket_id, operation_type, business_key, _json_dump(payload), now, now),
+                )
+                conn.commit()
+                deduplicated = False
+            except sqlite3.IntegrityError:
+                deduplicated = True
+            row = conn.execute(
+                """
+                SELECT * FROM outbox_events
+                WHERE ticket_id = ? AND operation_type = ? AND business_key = ?
+                """,
+                (ticket_id, operation_type, business_key),
+            ).fetchone()
+        assert row is not None
+        return self._outbox_event_from_row(row, deduplicated=deduplicated)
+
+    def list_outbox_events(self, status: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if status is None:
+                rows = conn.execute(
+                    "SELECT * FROM outbox_events ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM outbox_events WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+                    (status, limit),
+                ).fetchall()
+        return [self._outbox_event_from_row(row) for row in rows]
+
+    def mark_outbox_event_delivered(self, event_id: str) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE outbox_events
+                SET status = 'delivered', delivered_at = ?, updated_at = ?
+                WHERE event_id = ?
+                """,
+                (now, now, event_id),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM outbox_events WHERE event_id = ?", (event_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"Unknown event_id: {event_id}")
+        return self._outbox_event_from_row(row)
+
+    def mark_outbox_event_failed(self, event_id: str, error_message: str) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE outbox_events
+                SET status = 'failed', attempts = attempts + 1, last_error = ?, updated_at = ?
+                WHERE event_id = ?
+                """,
+                (error_message, now, event_id),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM outbox_events WHERE event_id = ?", (event_id,)).fetchone()
+        if row is None:
+            raise KeyError(f"Unknown event_id: {event_id}")
+        return self._outbox_event_from_row(row)
+
+    def record_idempotency_key(
+        self,
+        *,
+        key_scope: str,
+        key_value: str,
+        request_hash: str,
+        response_payload: dict[str, object],
+        status: str = "completed",
+    ) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO idempotency_keys
+                    (key_scope, key_value, request_hash, status, response_payload, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (key_scope, key_value, request_hash, status, _json_dump(response_payload), now, now),
+                )
+                conn.commit()
+                deduplicated = False
+            except sqlite3.IntegrityError:
+                deduplicated = True
+            row = conn.execute(
+                "SELECT * FROM idempotency_keys WHERE key_scope = ? AND key_value = ?",
+                (key_scope, key_value),
+            ).fetchone()
+        assert row is not None
+        return {
+            "key_scope": row["key_scope"],
+            "key_value": row["key_value"],
+            "request_hash": row["request_hash"],
+            "status": row["status"],
+            "response_payload": _json_load(row["response_payload"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "deduplicated": deduplicated,
+        }
+
+    def acquire_external_operation_lock(
+        self,
+        *,
+        lock_key: str,
+        ticket_id: str,
+        operation_type: str,
+        acquired_by: str,
+        expires_at: str | None = None,
+    ) -> dict[str, object]:
+        now = _utc_now()
+        with self.connect() as conn:
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO external_operation_locks
+                    (lock_key, ticket_id, operation_type, acquired_by, expires_at, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (lock_key, ticket_id, operation_type, acquired_by, expires_at, now),
+                )
+                conn.commit()
+                acquired = True
+            except sqlite3.IntegrityError:
+                acquired = False
+            row = conn.execute(
+                "SELECT * FROM external_operation_locks WHERE lock_key = ?",
+                (lock_key,),
+            ).fetchone()
+        assert row is not None
+        return {
+            "lock_key": row["lock_key"],
+            "ticket_id": row["ticket_id"],
+            "operation_type": row["operation_type"],
+            "acquired_by": row["acquired_by"],
+            "expires_at": row["expires_at"],
+            "created_at": row["created_at"],
+            "acquired": acquired,
+        }
+
+    @staticmethod
+    def _approval_from_row(row: sqlite3.Row) -> dict[str, object]:
+        return {
+            "approval_id": row["approval_id"],
+            "ticket_id": row["ticket_id"],
+            "thread_id": row["thread_id"],
+            "tool_name": row["tool_name"],
+            "tool_args": _json_load(row["tool_args"]),
+            "payload": _json_load(row["payload"]),
+            "status": row["status"],
+            "requested_by": row["requested_by"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "expires_at": row["expires_at"],
+        }
+
+    def create_approval_request(
+        self,
+        *,
+        ticket_id: str,
+        thread_id: str,
+        tool_name: str,
+        tool_args: dict[str, object],
+        payload: dict[str, object],
+        requested_by: str,
+        expires_at: str | None = None,
+    ) -> dict[str, object]:
+        approval_id = f"approval-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO approval_requests
+                (approval_id, ticket_id, thread_id, tool_name, tool_args, payload, status, requested_by, created_at, updated_at, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+                """,
+                (
+                    approval_id,
+                    ticket_id,
+                    thread_id,
+                    tool_name,
+                    _json_dump(tool_args),
+                    _json_dump(payload),
+                    requested_by,
+                    now,
+                    now,
+                    expires_at,
+                ),
+            )
+            conn.commit()
+        approval = self.get_approval_request(approval_id)
+        assert approval is not None
+        return approval
+
+    def get_approval_request(self, approval_id: str) -> dict[str, object] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM approval_requests WHERE approval_id = ?", (approval_id,)).fetchone()
+        if row is None:
+            return None
+        return self._approval_from_row(row)
+
+    def list_approval_requests(self, status: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if status is None:
+                rows = conn.execute(
+                    "SELECT * FROM approval_requests ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM approval_requests WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+                    (status, limit),
+                ).fetchall()
+        return [self._approval_from_row(row) for row in rows]
+
+    def record_approval_decision(
+        self,
+        *,
+        approval_id: str,
+        decision: str,
+        reviewer: str,
+        comment: str | None = None,
+        edited_action: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        status_by_decision = {"approve": "approved", "edit": "edited", "reject": "rejected"}
+        request_status = status_by_decision.get(decision, decision)
+        decision_id = f"decision-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            existing = conn.execute("SELECT * FROM approval_requests WHERE approval_id = ?", (approval_id,)).fetchone()
+            if existing is None:
+                raise KeyError(f"Unknown approval_id: {approval_id}")
+            conn.execute(
+                """
+                INSERT INTO approval_decisions
+                (decision_id, approval_id, decision, reviewer, comment, edited_action, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (decision_id, approval_id, decision, reviewer, comment, _json_dump(edited_action), now),
+            )
+            conn.execute(
+                "UPDATE approval_requests SET status = ?, updated_at = ? WHERE approval_id = ?",
+                (request_status, now, approval_id),
+            )
+            conn.commit()
+            row = conn.execute("SELECT * FROM approval_decisions WHERE decision_id = ?", (decision_id,)).fetchone()
+        assert row is not None
+        return {
+            "decision_id": row["decision_id"],
+            "approval_id": row["approval_id"],
+            "decision": row["decision"],
+            "reviewer": row["reviewer"],
+            "comment": row["comment"],
+            "edited_action": _json_load(row["edited_action"]),
+            "created_at": row["created_at"],
+        }
 
     def create_external_email_delivery(
         self,

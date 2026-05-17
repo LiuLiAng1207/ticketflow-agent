@@ -7,9 +7,33 @@ from typing import Any
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from .graph import TicketFlowRunner
+from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
+from .worker import enqueue_run_ticket_workflow
+
+
+class ApprovalDecisionPayload(BaseModel):
+    decision: ApprovalDecision
+    reviewer: str = "operator"
+    comment: str | None = None
+    edited_action: dict[str, Any] | None = None
+
+
+class WorkflowResumePayload(BaseModel):
+    decision: ApprovalDecision
+    comment: str | None = None
+    edited_action: dict[str, Any] | None = None
+
+
+class OutboxEventPayload(BaseModel):
+    ticket_id: str
+    operation_type: str
+    business_key: str
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 def _model_payload(model: Any) -> dict[str, Any]:
@@ -129,11 +153,36 @@ def create_app(
         ticket = _ticket_or_404(runner, ticket_id)
         return {"ticket": _model_payload(ticket)}
 
-    @app.post("/api/v1/tickets/{ticket_id}/run")
-    def run_ticket(ticket_id: str, request: Request) -> dict[str, object]:
+    @app.post("/api/v1/tickets/{ticket_id}/run", response_model=None)
+    def run_ticket(ticket_id: str, request: Request, sync: bool = Query(default=False)) -> Any:
         runner = _get_runner(request)
-        _ticket_or_404(runner, ticket_id)
+        ticket = _ticket_or_404(runner, ticket_id)
         try:
+            if not sync:
+                task = runner.repository.create_workflow_task(
+                    ticket_id=ticket.ticket_id,
+                    mode="async",
+                )
+                celery_task_id = enqueue_run_ticket_workflow(
+                    task_id=str(task["task_id"]),
+                    project_root=request.app.state.project_root,
+                    runner_overrides=request.app.state.runner_overrides,
+                )
+                current_task = runner.repository.get_workflow_task(str(task["task_id"])) or task
+                if current_task["status"] in {"queued", "running"}:
+                    current_task = runner.repository.set_workflow_task_celery_id(str(task["task_id"]), celery_task_id)
+                return JSONResponse(
+                    status_code=202,
+                    content=jsonable_encoder(
+                        {
+                            "ticket_id": ticket_id,
+                            "task_id": current_task["task_id"],
+                            "status": current_task["status"],
+                            "celery_task_id": current_task.get("celery_task_id") or celery_task_id,
+                            "task": current_task,
+                        }
+                    ),
+                )
             result = runner.run_ticket(ticket_id)
         except Exception as exc:  # pragma: no cover - exercised by integration/runtime paths.
             raise HTTPException(
@@ -146,6 +195,28 @@ def create_app(
             ) from exc
         return _summarize_result(ticket_id, result)
 
+    @app.get("/api/v1/tasks")
+    def list_tasks(request: Request, limit: int = Query(default=100, ge=1, le=500)) -> dict[str, object]:
+        runner = _get_runner(request)
+        tasks = runner.repository.list_workflow_tasks(limit=limit)
+        return {"tasks": tasks, "count": len(tasks)}
+
+    @app.get("/api/v1/tasks/{task_id}")
+    def get_task(task_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        task = runner.repository.get_workflow_task(task_id)
+        if task is None:
+            raise HTTPException(status_code=404, detail=f"Unknown task_id: {task_id}")
+        return {"task": task}
+
+    @app.post("/api/v1/tasks/{task_id}/cancel")
+    def cancel_task(task_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        if runner.repository.get_workflow_task(task_id) is None:
+            raise HTTPException(status_code=404, detail=f"Unknown task_id: {task_id}")
+        task = runner.repository.cancel_workflow_task(task_id, reason="operator_cancelled")
+        return {"task": task}
+
     @app.get("/api/v1/tickets/{ticket_id}/audit")
     def list_ticket_audit(ticket_id: str, request: Request) -> dict[str, object]:
         runner = _get_runner(request)
@@ -157,6 +228,72 @@ def create_app(
     def ops_summary(request: Request) -> dict[str, int]:
         runner = _get_runner(request)
         return _ops_summary(runner)
+
+    @app.get("/api/v1/approvals")
+    def list_approvals(
+        request: Request,
+        status: str | None = Query(default=None),
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> dict[str, object]:
+        runner = _get_runner(request)
+        approvals = runner.repository.list_approval_requests(status=status, limit=limit)
+        return {"approvals": approvals, "count": len(approvals)}
+
+    @app.post("/api/v1/approvals/{approval_id}/decision")
+    def decide_approval(approval_id: str, payload: ApprovalDecisionPayload, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        if runner.repository.get_approval_request(approval_id) is None:
+            raise HTTPException(status_code=404, detail=f"Unknown approval_id: {approval_id}")
+        decision = runner.repository.record_approval_decision(
+            approval_id=approval_id,
+            decision=payload.decision,
+            reviewer=payload.reviewer,
+            comment=payload.comment,
+            edited_action=payload.edited_action,
+        )
+        approval = runner.repository.get_approval_request(approval_id)
+        return {"approval": approval, "decision": decision}
+
+    @app.post("/api/v1/workflows/{thread_id}/resume")
+    def resume_workflow(thread_id: str, payload: WorkflowResumePayload, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        edited_action = ActionProposal.model_validate(payload.edited_action) if payload.edited_action else None
+        review_decision = ReviewDecision(
+            decision=payload.decision,
+            edited_action=edited_action,
+            comment=payload.comment,
+        )
+        try:
+            result = runner.resume_ticket(thread_id, review_decision)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail={"error": "workflow_resume_failed", "message": str(exc), "thread_id": thread_id},
+            ) from exc
+        ticket = result.state.get("ticket")
+        ticket_id = ticket.ticket_id if hasattr(ticket, "ticket_id") else str(result.state.get("ticket_id", "unknown"))
+        return _summarize_result(ticket_id, result)
+
+    @app.post("/api/v1/outbox", response_model=None)
+    def create_outbox_event(payload: OutboxEventPayload, request: Request) -> Any:
+        runner = _get_runner(request)
+        event = runner.repository.create_outbox_event(
+            ticket_id=payload.ticket_id,
+            operation_type=payload.operation_type,
+            business_key=payload.business_key,
+            payload=payload.payload,
+        )
+        return JSONResponse(status_code=201 if not event["deduplicated"] else 200, content=jsonable_encoder({"event": event}))
+
+    @app.get("/api/v1/outbox")
+    def list_outbox_events(
+        request: Request,
+        status: str | None = Query(default=None),
+        limit: int = Query(default=100, ge=1, le=500),
+    ) -> dict[str, object]:
+        runner = _get_runner(request)
+        events = runner.repository.list_outbox_events(status=status, limit=limit)
+        return {"events": events, "count": len(events)}
 
     return app
 

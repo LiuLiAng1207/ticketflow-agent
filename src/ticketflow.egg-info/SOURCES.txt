@@ -29,10 +29,13 @@ src/ticketflow/interview_pack.py
 src/ticketflow/llm.py
 src/ticketflow/llm_check.py
 src/ticketflow/mcp_email_client.py
+src/ticketflow/migrations.py
 src/ticketflow/models.py
 src/ticketflow/module_contrib.py
 src/ticketflow/multimodal_eval.py
+src/ticketflow/postgres_repository.py
 src/ticketflow/rag.py
+src/ticketflow/repository.py
 src/ticketflow/reset.py
 src/ticketflow/runtime_control.py
 src/ticketflow/seed.py
@@ -54,6 +57,7 @@ tests/test_multimodal_ablation.py
 tests/test_multimodal_benchmark.py
 tests/test_multimodal_eval.py
 tests/test_multimodal_ticketflow.py
+tests/test_production_persistence.py
 tests/test_runtime_control.py
 tests/test_ticketflow.py
 tests/test_worker.py

@@ -9,3 +9,8 @@
 - Phase 1 implementation target: FastAPI skeleton, worker skeleton, Docker Compose foundation, tests, and README update.
 - Added FastAPI production skeleton endpoints, worker task registry, service settings, Dockerfile, Docker Compose, API tests, and worker tests.
 - API/worker focused verification passed: `8 passed`.
+- Added production control-plane persistence for workflow tasks, outbox events, idempotency keys, operation locks, approval requests, and approval decisions.
+- Added Celery worker integration with eager-mode test coverage and Redis-backed Docker Compose configuration.
+- Added repository protocol, PostgreSQL repository skeleton, and `ticketflow-migrate` migration runner.
+- Added Streamlit sidebar visibility for recent workflow tasks, pending approvals, and outbox events.
+- Verification passed after Phase 2 control-plane work: `94 passed`, `docker compose config ok`, `ticketflow-migrate --backend sqlite` ok.

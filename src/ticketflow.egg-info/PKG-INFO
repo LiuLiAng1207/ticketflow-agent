@@ -5,12 +5,14 @@ Summary: A LangGraph-powered ticket collaboration platform for customer support 
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 Requires-Dist: aiosmtpd>=1.4.6
+Requires-Dist: celery>=5.4.0
 Requires-Dist: chromadb>=1.1.0
 Requires-Dist: fastapi>=0.115.0
 Requires-Dist: langgraph>=1.1.0
 Requires-Dist: langgraph-checkpoint-sqlite>=3.0.0
 Requires-Dist: mcp>=1.26.0
 Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: psycopg[binary]>=3.2.0
 Requires-Dist: pydantic<3,>=2.7.0
 Requires-Dist: redis>=5.0.0
 Requires-Dist: requests>=2.32.0
@@ -169,3 +171,34 @@ python -m pytest tests\test_api.py tests\test_worker.py -q
 6. Production Claw Harness、轨迹记录、Pass^3 和 leaderboard。
 7. OpenTelemetry、Prometheus、Grafana、Langfuse 观测体系。
 8. Locust / k6 / worker 并发压测与稳定性报告。
+
+## Phase 2：生产控制面
+
+当前分支已经加入生产控制面地基：
+
+- `workflow_tasks`：记录工单 workflow 任务状态。
+- `outbox_events`：将邮件、退款、升级等外部副作用先写入 outbox，再由 worker 消费。
+- `idempotency_keys`：防止同一业务操作重复执行。
+- `external_operation_locks`：为外部副作用提供互斥保护。
+- `approval_requests` / `approval_decisions`：持久化高风险工具审批请求和审批结果。
+
+默认本地开发使用 `CELERY_TASK_ALWAYS_EAGER=true`，方便无 Redis 时直接跑通测试。Docker Compose 中 worker 使用 Redis broker：
+
+```bash
+ticketflow-migrate --backend sqlite
+ticketflow-worker --mode local --once
+celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
+```
+
+异步运行工单：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/tickets/TCK-0001/run
+curl http://127.0.0.1:8000/api/v1/tasks/<task_id>
+```
+
+同步调试仍然保留：
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/tickets/TCK-0001/run?sync=true"
+```

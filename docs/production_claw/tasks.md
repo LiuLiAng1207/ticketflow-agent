@@ -28,3 +28,11 @@
 - API smoke tests.
 - Worker registry tests.
 - Full pytest regression.
+
+## Phase 2 Control Plane
+
+- Workflow task lifecycle is persisted in `workflow_tasks`.
+- External side effects are staged through `outbox_events`.
+- Duplicate operations are guarded by `idempotency_keys` and `external_operation_locks`.
+- Human approval state is persisted in `approval_requests` and `approval_decisions`.
+- Celery eager mode is used in local tests; Docker Compose config runs a Redis-backed Celery worker.

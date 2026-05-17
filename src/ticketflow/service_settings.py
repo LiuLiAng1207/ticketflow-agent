@@ -27,6 +27,9 @@ class ServiceSettings:
     neo4j_uri: str | None
     minio_endpoint: str | None
     enable_production_services: bool
+    celery_broker_url: str | None
+    celery_result_backend: str | None
+    celery_task_always_eager: bool
 
     @classmethod
     def from_project_root(cls, project_root: str | Path | None = None) -> "ServiceSettings":
@@ -44,6 +47,9 @@ class ServiceSettings:
             neo4j_uri=os.getenv("NEO4J_URI"),
             minio_endpoint=os.getenv("MINIO_ENDPOINT"),
             enable_production_services=_get_bool("ENABLE_PRODUCTION_SERVICES", False),
+            celery_broker_url=os.getenv("CELERY_BROKER_URL") or os.getenv("REDIS_URL"),
+            celery_result_backend=os.getenv("CELERY_RESULT_BACKEND") or os.getenv("REDIS_URL"),
+            celery_task_always_eager=_get_bool("CELERY_TASK_ALWAYS_EAGER", os.getenv("APP_ENV", "development") != "production"),
         )
 
     def readiness_payload(self, *, sqlite_db_path: Path | None = None) -> dict[str, object]:
@@ -65,5 +71,10 @@ class ServiceSettings:
                 "qdrant": {"configured": bool(self.qdrant_url), "url": self.qdrant_url},
                 "neo4j": {"configured": bool(self.neo4j_uri), "uri": self.neo4j_uri},
                 "minio": {"configured": bool(self.minio_endpoint), "endpoint": self.minio_endpoint},
+                "celery": {
+                    "configured": bool(self.celery_broker_url),
+                    "broker_url": self.celery_broker_url,
+                    "task_always_eager": self.celery_task_always_eager,
+                },
             },
         }
