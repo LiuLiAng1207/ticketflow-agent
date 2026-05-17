@@ -383,6 +383,48 @@ class TicketFlowRepository:
             raise KeyError(f"Unknown ticket_id: {ticket_id}")
         return TicketRecord.model_validate(dict(row))
 
+    def create_ticket(
+        self,
+        *,
+        title: str,
+        body: str,
+        customer_id: str = "CUST-001",
+        customer_tier: str = "standard",
+        product: str = "未指定产品",
+        channel: str = "web",
+        linked_order_id: str | None = None,
+        expected_category: str | None = None,
+    ) -> TicketRecord:
+        ticket_id = f"TCK-CHAT-{uuid4().hex[:8].upper()}"
+        created_at = datetime.now(timezone.utc).isoformat()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO tickets
+                    (ticket_id, channel, customer_id, customer_tier, title, body, product, created_at, status,
+                     linked_order_id, expected_category, source_dataset, source_ticket_ref, source_language,
+                     source_queue, source_subject, source_body)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, 'agent_chat', ?, 'zh', 'agent_chat', ?, ?)
+                """,
+                (
+                    ticket_id,
+                    channel,
+                    customer_id,
+                    customer_tier,
+                    title,
+                    body,
+                    product,
+                    created_at,
+                    linked_order_id,
+                    expected_category,
+                    ticket_id,
+                    title,
+                    body,
+                ),
+            )
+            conn.commit()
+        return self.get_ticket(ticket_id)
+
     def get_customer_profile(self, customer_id: str) -> CustomerProfile | None:
         with self.connect() as conn:
             row = conn.execute("SELECT * FROM customers WHERE customer_id = ?", (customer_id,)).fetchone()

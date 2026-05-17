@@ -26,3 +26,4 @@
 - Fixed PostgreSQL seed loading for psycopg by using cursor-level `executemany`.
 - Completed Outbox queue handoff: API-created events and workflow-created high-risk side-effect events are enqueued to the Celery worker and delivered idempotently.
 - Phase 6 API-first ops console started: Streamlit production control panel now reads API readiness, task queue, approval queue, and Outbox state from FastAPI first, then falls back to local repository if the API is offline.
+- Phase 7 conversational ticket Agent started: added `/api/v1/agent/chat` for safe ticket querying, ticket creation, workflow launch, approval queue inspection, Outbox inspection, and knowledge-candidate submission.

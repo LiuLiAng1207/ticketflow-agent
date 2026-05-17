@@ -69,3 +69,10 @@
 - The panel displays API availability, API URL, database backend, Celery mode, task queue, approval queue, and Outbox queue.
 - If FastAPI is offline, the panel falls back to the local repository and shows the fallback reason instead of breaking the UI.
 - `TICKETFLOW_API_URL` or `API_BASE_URL` can override the API address; otherwise `API_HOST` and `API_PORT` are used.
+
+## Phase 7 Conversational Ticket Agent
+
+- Added `POST /api/v1/agent/chat` as a safe conversational operations entrypoint.
+- Supported intents: query ticket, create ticket, run ticket workflow, list pending approvals, list Outbox events, and submit knowledge candidates.
+- High-risk approvals are intentionally not executable directly through chat; the Agent redirects operators to durable approval surfaces.
+- Newly created chat tickets are persisted in the same repository backend and get audit events tagged as `ticket_created_from_chat`.

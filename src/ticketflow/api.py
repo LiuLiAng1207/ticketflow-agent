@@ -10,6 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
@@ -34,6 +35,12 @@ class OutboxEventPayload(BaseModel):
     operation_type: str
     business_key: str
     payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentChatPayload(BaseModel):
+    message: str
+    session_id: str | None = None
+    actor: str = "operator"
 
 
 def _model_payload(model: Any) -> dict[str, Any]:
@@ -228,6 +235,22 @@ def create_app(
     def ops_summary(request: Request) -> dict[str, int]:
         runner = _get_runner(request)
         return _ops_summary(runner)
+
+    @app.post("/api/v1/agent/chat")
+    def agent_chat(payload: AgentChatPayload, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        context = AgentChatContext(
+            repository=runner.repository,
+            project_root=request.app.state.project_root,
+            runner_overrides=request.app.state.runner_overrides,
+        )
+        try:
+            result = handle_agent_chat(payload.message, context)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        result["session_id"] = payload.session_id
+        result["actor"] = payload.actor
+        return result
 
     @app.get("/api/v1/approvals")
     def list_approvals(

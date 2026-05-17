@@ -16,6 +16,19 @@ class RepositoryProtocol(Protocol):
 
     def get_ticket(self, ticket_id: str) -> TicketRecord: ...
 
+    def create_ticket(
+        self,
+        *,
+        title: str,
+        body: str,
+        customer_id: str = "CUST-001",
+        customer_tier: str = "standard",
+        product: str = "未指定产品",
+        channel: str = "web",
+        linked_order_id: str | None = None,
+        expected_category: str | None = None,
+    ) -> TicketRecord: ...
+
     def save_audit_log(
         self,
         ticket_id: str,
@@ -30,6 +43,12 @@ class RepositoryProtocol(Protocol):
     def create_workflow_task(self, ticket_id: str, mode: str, thread_id: str | None = None) -> dict[str, object]: ...
 
     def get_workflow_task(self, task_id: str) -> dict[str, object] | None: ...
+
+    def set_workflow_task_celery_id(self, task_id: str, celery_task_id: str) -> dict[str, object]: ...
+
+    def list_approval_requests(self, status: str | None = None, limit: int = 100) -> list[dict[str, object]]: ...
+
+    def list_outbox_events(self, status: str | None = None, limit: int = 100) -> list[dict[str, object]]: ...
 
     def create_outbox_event(
         self,
