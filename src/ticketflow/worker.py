@@ -116,6 +116,11 @@ def run_ticket_workflow_now(
                 approval_id=str(approval_id) if approval_id else None,
             )
         completed = runner.repository.complete_workflow_task(task_id, result=result.model_dump(mode="json"))
+        enqueue_pending_outbox_for_ticket(
+            ticket_id=str(task["ticket_id"]),
+            project_root=project_root,
+            runner_overrides=runner_overrides,
+        )
         return completed
     except Exception as exc:
         try:
@@ -143,6 +148,44 @@ def enqueue_run_ticket_workflow(
 ) -> str:
     async_result = run_ticket_workflow_task.delay(str(task_id), str(project_root), runner_overrides)
     return str(async_result.id)
+
+
+def enqueue_deliver_outbox_event(
+    *,
+    event_id: str,
+    project_root: str | Path,
+    runner_overrides: dict[str, str] | None = None,
+) -> str:
+    async_result = deliver_outbox_event_task.delay(str(event_id), str(project_root), runner_overrides)
+    return str(async_result.id)
+
+
+def enqueue_pending_outbox_for_ticket(
+    *,
+    ticket_id: str,
+    project_root: str | Path,
+    runner_overrides: dict[str, str] | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
+    try:
+        pending_events = [
+            event
+            for event in runner.repository.list_outbox_events(status="pending", limit=limit)
+            if str(event["ticket_id"]) == ticket_id
+        ]
+    finally:
+        runner.close()
+
+    enqueued: list[dict[str, Any]] = []
+    for event in pending_events:
+        celery_task_id = enqueue_deliver_outbox_event(
+            event_id=str(event["event_id"]),
+            project_root=project_root,
+            runner_overrides=runner_overrides,
+        )
+        enqueued.append({**event, "celery_task_id": celery_task_id})
+    return enqueued
 
 
 def deliver_outbox_event_now(

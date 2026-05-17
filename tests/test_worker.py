@@ -5,6 +5,7 @@ from ticketflow.worker import (
     TASK_REGISTRY,
     deliver_outbox_event_now,
     describe_registered_tasks,
+    enqueue_pending_outbox_for_ticket,
     run_local_once,
     run_ticket_workflow_now,
 )
@@ -147,3 +148,41 @@ def test_worker_delivers_outbox_email_once(ticketflow_project):
     assert second["status"] == "delivered"
     assert len(deliveries) == 1
     assert deliveries[0].op_type == "incident_email"
+
+
+def test_worker_enqueues_pending_outbox_events_for_ticket(ticketflow_project):
+    runner = TicketFlowRunner.from_project_root(
+        ticketflow_project,
+        overrides={"RAG_EMBED_BACKEND": "hash", "ENABLE_PRODUCTION_SERVICES": "true"},
+    )
+    runner.reset_demo_data()
+    ticket_id = runner.list_open_tickets(limit=1)[0].ticket_id
+    event = runner.repository.create_outbox_event(
+        ticket_id=ticket_id,
+        operation_type="incident_email",
+        business_key=f"incident-auto:{ticket_id}",
+        payload={
+            "recipient": "ops@example.com",
+            "subject": "[TicketFlow] queued incident",
+            "provider_message_id": "provider-auto-1",
+        },
+    )
+    runner.close()
+
+    enqueued = enqueue_pending_outbox_for_ticket(
+        ticket_id=ticket_id,
+        project_root=ticketflow_project,
+        runner_overrides={"RAG_EMBED_BACKEND": "hash", "ENABLE_PRODUCTION_SERVICES": "true"},
+    )
+
+    reloaded = TicketFlowRunner.from_project_root(
+        ticketflow_project,
+        overrides={"RAG_EMBED_BACKEND": "hash", "ENABLE_PRODUCTION_SERVICES": "true"},
+    )
+    delivered = reloaded.repository.get_outbox_event(event["event_id"])
+    deliveries = reloaded.repository.list_external_email_deliveries(ticket_id)
+    reloaded.close()
+
+    assert enqueued and enqueued[0]["event_id"] == event["event_id"]
+    assert delivered["status"] == "delivered"
+    assert len(deliveries) == 1

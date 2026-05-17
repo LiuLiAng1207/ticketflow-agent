@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from .graph import TicketFlowRunner
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
-from .worker import enqueue_run_ticket_workflow
+from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_ticket_workflow
 
 
 class ApprovalDecisionPayload(BaseModel):
@@ -279,6 +279,11 @@ def create_app(
                         str(workflow_task_id),
                         result=result.model_dump(mode="json"),
                     )
+                    enqueue_pending_outbox_for_ticket(
+                        ticket_id=str(existing_approval["ticket_id"]),
+                        project_root=request.app.state.project_root,
+                        runner_overrides=request.app.state.runner_overrides,
+                    )
                 resume_result = {**_summarize_result(str(existing_approval["ticket_id"]), result), "task": task}
             except Exception as exc:
                 runner.repository.fail_workflow_task(str(workflow_task_id), error_message=str(exc))
@@ -317,7 +322,17 @@ def create_app(
             business_key=payload.business_key,
             payload=payload.payload,
         )
-        return JSONResponse(status_code=201 if not event["deduplicated"] else 200, content=jsonable_encoder({"event": event}))
+        celery_task_id = None
+        if event["status"] == "pending":
+            celery_task_id = enqueue_deliver_outbox_event(
+                event_id=str(event["event_id"]),
+                project_root=request.app.state.project_root,
+                runner_overrides=request.app.state.runner_overrides,
+            )
+        return JSONResponse(
+            status_code=201 if not event["deduplicated"] else 200,
+            content=jsonable_encoder({"event": event, "celery_task_id": celery_task_id}),
+        )
 
     @app.get("/api/v1/outbox")
     def list_outbox_events(

@@ -19,5 +19,9 @@
 - Phase 4 PostgreSQL repository parity started: PostgreSQL now defines business tables for customers, orders, tickets, KB, policies, history, attachments, audit, workflow tasks, approvals, outbox, idempotency, and external deliveries.
 - `TicketFlowRunner.from_project_root()` now uses the unified repository factory, so `DATABASE_BACKEND=postgres` selects `PostgresTicketFlowRepository` instead of hard-coded SQLite.
 - Docker Compose production services now set `DATABASE_BACKEND=postgres` for API and worker; SQLite remains the local `.env.example` fallback.
+- Phase 5 compose dependency scope adjusted: API/worker smoke tests depend only on PostgreSQL and Redis; Qdrant, Neo4j, and MinIO remain declared services but are not startup blockers until their own phases.
 - Added repository contract tests plus optional live PostgreSQL parity test gated by `TEST_POSTGRES_DATABASE_URL`.
 - Verification after Phase 4 repository parity: `100 passed`, `1 skipped` without a live PostgreSQL URL.
+- Phase 5 Docker smoke verified with PostgreSQL + Redis + API + Worker: `/healthz`, `/readyz`, ticket listing, async workflow execution, durable approval resume, and Outbox delivery all ran through containerized services.
+- Fixed PostgreSQL seed loading for psycopg by using cursor-level `executemany`.
+- Completed Outbox queue handoff: API-created events and workflow-created high-risk side-effect events are enqueued to the Celery worker and delivered idempotently.

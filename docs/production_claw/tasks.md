@@ -51,4 +51,14 @@
 - PostgreSQL repository exposes the same core workflow methods as SQLite for RAG reads, action tools, task state, durable approvals, outbox, and email delivery records.
 - Runner construction uses the repository factory, so production can switch with `DATABASE_BACKEND=postgres` and `DATABASE_URL=...`.
 - Docker Compose API and worker services now select PostgreSQL by default; `.env.example` keeps SQLite as a safe local fallback.
+- API and worker startup depend only on PostgreSQL and Redis for the production-loop smoke test; Qdrant, Neo4j, and MinIO stay available as opt-in services for later phases.
 - Optional live parity check: set `TEST_POSTGRES_DATABASE_URL` before running `tests/test_postgres_repository_contract.py`.
+
+## Phase 5 Docker Production Loop
+
+- `docker compose up -d postgres redis api worker` starts the production loop without requiring optional Qdrant, Neo4j, or MinIO services.
+- API readiness bootstraps the PostgreSQL seed data and reports Redis/Celery configuration.
+- `POST /api/v1/tickets/{ticket_id}/run` creates a Redis-backed Celery task and persists status transitions in PostgreSQL.
+- High-risk refund workflows enter `waiting_approval`, persist approval payload snapshots, and resume through `POST /api/v1/approvals/{approval_id}/decision`.
+- Workflow-created Outbox events are enqueued for delivery after approval resume; API-created Outbox events are enqueued immediately.
+- Outbox delivery uses the worker plus operation locks to avoid duplicate external side effects.

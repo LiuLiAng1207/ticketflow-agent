@@ -319,10 +319,11 @@ class PostgresTicketFlowRepository:
                 conn.execute(f"DELETE FROM {table}")
                 columns = list(rows[0].keys())
                 placeholders = ", ".join(["%s"] * len(columns))
-                conn.executemany(
-                    f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
-                    [tuple(self._coerce_value(row[column]) for column in columns) for row in rows],
-                )
+                with conn.cursor() as cursor:
+                    cursor.executemany(
+                        f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})",
+                        [tuple(self._coerce_value(row[column]) for column in columns) for row in rows],
+                    )
             conn.commit()
 
     def bootstrap(self, seed_dir: Path) -> None:
