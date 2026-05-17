@@ -37,6 +37,10 @@ ticketflow-api
 - `GET /api/v1/approvals`
 - `POST /api/v1/approvals/{approval_id}/decision`
 - `GET /api/v1/outbox`
+- `GET /api/v1/kg/health`
+- `POST /api/v1/kg/tickets/{ticket_id}/rebuild`
+- `GET /api/v1/kg/tickets/{ticket_id}`
+- `GET /api/v1/kg/search`
 
 默认异步运行会返回 `task_id`。如果工作流遇到退款或升级等敏感工具审批，任务会进入 `waiting_approval`，审批通过后 API 会自动 resume workflow 并更新任务状态。
 
@@ -54,6 +58,8 @@ celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
 - `send_outbox_email`
 - `run_claw_task`
 - `build_knowledge_graph`
+
+`build_knowledge_graph` rebuilds a ticket-level business graph from the current repository state. The graph is used for evidence-chain explanation, audit review, and future GraphRAG retrieval; it does not replace sufficiency checks or approval controls.
 
 ## Docker Compose
 

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
+from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .service_settings import ServiceSettings
 from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_ticket_workflow
@@ -58,6 +59,14 @@ def _get_runner(request: Request) -> TicketFlowRunner:
         )
         request.app.state.runner = runner
     return runner
+
+
+def _get_kg_store(request: Request):
+    kg_store = getattr(request.app.state, "kg_store", None)
+    if kg_store is None:
+        kg_store = create_knowledge_graph_store(request.app.state.service_settings)
+        request.app.state.kg_store = kg_store
+    return kg_store
 
 
 def _ticket_or_404(runner: TicketFlowRunner, ticket_id: str):
@@ -115,7 +124,7 @@ def create_app(
     runner_overrides: dict[str, str] | None = None,
 ) -> FastAPI:
     root = Path(project_root) if project_root is not None else Path.cwd()
-    service_settings = ServiceSettings.from_project_root(root)
+    service_settings = ServiceSettings.from_project_root(root, overrides=runner_overrides)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -124,6 +133,10 @@ def create_app(
         if runner is not None:
             runner.close()
             app.state.runner = None
+        kg_store = getattr(app.state, "kg_store", None)
+        if kg_store is not None:
+            kg_store.close()
+            app.state.kg_store = None
 
     app = FastAPI(
         title="TicketFlow API",
@@ -135,6 +148,7 @@ def create_app(
     app.state.service_settings = service_settings
     app.state.runner_overrides = runner_overrides
     app.state.runner = None
+    app.state.kg_store = None
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
@@ -243,6 +257,7 @@ def create_app(
             repository=runner.repository,
             project_root=request.app.state.project_root,
             runner_overrides=request.app.state.runner_overrides,
+            knowledge_graph_store=_get_kg_store(request),
         )
         try:
             result = handle_agent_chat(payload.message, context)
@@ -251,6 +266,36 @@ def create_app(
         result["session_id"] = payload.session_id
         result["actor"] = payload.actor
         return result
+
+    @app.get("/api/v1/kg/health")
+    def kg_health(request: Request) -> dict[str, object]:
+        return _get_kg_store(request).health()
+
+    @app.post("/api/v1/kg/tickets/{ticket_id}/rebuild")
+    def rebuild_ticket_graph(
+        ticket_id: str,
+        request: Request,
+        task_id: str | None = Query(default=None),
+    ) -> dict[str, object]:
+        runner = _get_runner(request)
+        _ticket_or_404(runner, ticket_id)
+        graph = build_ticket_graph_from_repository(runner.repository, ticket_id, task_id=task_id)
+        result = _get_kg_store(request).upsert_ticket_graph(graph)
+        return {**result, "graph": {"node_count": graph["node_count"], "edge_count": graph["edge_count"]}}
+
+    @app.get("/api/v1/kg/tickets/{ticket_id}")
+    def get_ticket_graph(ticket_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        _ticket_or_404(runner, ticket_id)
+        return _get_kg_store(request).get_ticket_graph(ticket_id)
+
+    @app.get("/api/v1/kg/search")
+    def search_kg(
+        request: Request,
+        q: str = Query(..., min_length=1),
+        limit: int = Query(default=20, ge=1, le=100),
+    ) -> dict[str, object]:
+        return _get_kg_store(request).search(q, limit=limit)
 
     @app.get("/api/v1/approvals")
     def list_approvals(

@@ -79,6 +79,8 @@ def test_control_plane_snapshot_prefers_api(monkeypatch, tmp_path: Path) -> None
             return {"approvals": [{"approval_id": "approval-api", "status": "pending"}]}
         if path.startswith("/api/v1/outbox"):
             return {"events": [{"event_id": "outbox-api", "status": "pending"}]}
+        if path == "/api/v1/kg/health":
+            return {"status": "ok", "backend": "neo4j", "node_count": 8, "edge_count": 9}
         raise AssertionError(path)
 
     monkeypatch.setattr("ticketflow.app._fetch_api_json", fake_fetch)
@@ -90,6 +92,7 @@ def test_control_plane_snapshot_prefers_api(monkeypatch, tmp_path: Path) -> None
     assert snapshot["tasks"][0]["task_id"] == "task-api"
     assert snapshot["approvals"][0]["approval_id"] == "approval-api"
     assert snapshot["outbox_events"][0]["event_id"] == "outbox-api"
+    assert snapshot["kg_health"]["backend"] == "neo4j"
 
 
 def test_control_plane_snapshot_falls_back_to_repository(monkeypatch, tmp_path: Path) -> None:
@@ -113,6 +116,7 @@ def test_control_plane_snapshot_falls_back_to_repository(monkeypatch, tmp_path: 
     assert snapshot["tasks"][0]["task_id"] == "task-local"
     assert snapshot["approvals"][0]["approval_id"] == "approval-local"
     assert snapshot["outbox_events"][0]["event_id"] == "outbox-local"
+    assert snapshot["kg_health"]["status"] == "unknown"
 
 
 def test_sidebar_keeps_expand_control_visible() -> None:

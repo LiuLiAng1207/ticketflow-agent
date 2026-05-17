@@ -247,6 +247,17 @@ def _fetch_api_json(base_url: str, path: str, *, timeout: float = 1.5) -> dict[s
         return json.loads(response.read().decode("utf-8"))
 
 
+def _post_api_json(base_url: str, path: str, *, timeout: float = 3.0) -> dict[str, Any]:
+    request = urllib.request.Request(
+        f"{base_url.rstrip('/')}{path}",
+        data=b"{}",
+        headers={"Accept": "application/json", "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -> dict[str, Any]:
     api_base_url = _service_api_base_url(project_root)
     try:
@@ -254,6 +265,7 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
         tasks = _fetch_api_json(api_base_url, "/api/v1/tasks?limit=20").get("tasks", [])
         approvals = _fetch_api_json(api_base_url, "/api/v1/approvals?limit=20").get("approvals", [])
         outbox_events = _fetch_api_json(api_base_url, "/api/v1/outbox?limit=20").get("events", [])
+        kg_health = _fetch_api_json(api_base_url, "/api/v1/kg/health")
         return {
             "source": "api",
             "api_base_url": api_base_url,
@@ -261,6 +273,7 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "tasks": tasks,
             "approvals": approvals,
             "outbox_events": outbox_events,
+            "kg_health": kg_health,
             "error": None,
         }
     except (OSError, TimeoutError, urllib.error.URLError, json.JSONDecodeError) as exc:
@@ -274,8 +287,30 @@ def _load_control_plane_snapshot(project_root: Path, runner: TicketFlowRunner) -
             "tasks": tasks,
             "approvals": approvals,
             "outbox_events": outbox_events,
+            "kg_health": {"status": "unknown", "backend": "unavailable"},
             "error": str(exc),
         }
+
+
+def _load_ticket_graph_snapshot(project_root: Path, ticket_id: str) -> dict[str, Any]:
+    api_base_url = _service_api_base_url(project_root)
+    try:
+        return _fetch_api_json(api_base_url, f"/api/v1/kg/tickets/{ticket_id}", timeout=2.0)
+    except (OSError, TimeoutError, urllib.error.URLError, json.JSONDecodeError) as exc:
+        return {
+            "enabled": False,
+            "ticket_id": ticket_id,
+            "nodes": [],
+            "edges": [],
+            "node_count": 0,
+            "edge_count": 0,
+            "error": str(exc),
+        }
+
+
+def _rebuild_ticket_graph(project_root: Path, ticket_id: str) -> dict[str, Any]:
+    api_base_url = _service_api_base_url(project_root)
+    return _post_api_json(api_base_url, f"/api/v1/kg/tickets/{ticket_id}/rebuild", timeout=5.0)
 
 
 def _runtime_env_overrides(project_root: Path, selected_backend: str | None = None) -> dict[str, str]:
@@ -1828,6 +1863,16 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         st.sidebar.caption(f"数据后端：{database.get('backend', 'unknown')}")
         st.sidebar.caption(f"Celery：{'队列模式' if not celery.get('task_always_eager') else '本地同步模式'}")
 
+    kg_health = snapshot.get("kg_health") if isinstance(snapshot.get("kg_health"), dict) else {}
+    kg_status = kg_health.get("status", "unknown")
+    kg_backend = kg_health.get("backend", "unavailable")
+    if kg_status == "ok":
+        st.sidebar.success(f"知识图谱：{kg_backend} 已连接")
+    elif kg_status == "disabled":
+        st.sidebar.info("知识图谱：未启用")
+    else:
+        st.sidebar.warning("知识图谱：不可用或未连接")
+
     pending_tasks = sum(1 for item in tasks if item.get("status") in {"queued", "running", "waiting_approval"})
     pending_approvals = sum(1 for item in approvals if item.get("status") == "pending")
     pending_outbox = sum(1 for item in outbox_events if item.get("status") == "pending")
@@ -1841,6 +1886,35 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         st.json(approvals[:5])
         st.write("最近 Outbox")
         st.json(outbox_events[:5])
+        st.write("知识图谱健康状态")
+        st.json(kg_health)
+
+
+def _render_ticket_kg_panel(ticket: TicketRecord) -> None:
+    graph = _load_ticket_graph_snapshot(_project_root(), ticket.ticket_id)
+    if not graph.get("enabled"):
+        st.info("知识图谱解释层当前未启用或 API 不可用。主工作流仍可正常运行，图谱只作为解释和审计增强能力。")
+        if graph.get("error"):
+            st.caption(f"读取失败原因：{graph['error']}")
+        return
+
+    cols = st.columns(3)
+    cols[0].metric("业务节点", int(graph.get("node_count", 0)))
+    cols[1].metric("业务关系", int(graph.get("edge_count", 0)))
+    cols[2].caption("图谱用于解释证据链和处理路径，不参与绕过审批。")
+    if st.button("重建当前工单知识图谱", use_container_width=True):
+        try:
+            result = _rebuild_ticket_graph(_project_root(), ticket.ticket_id)
+            st.success(f"图谱已重建：{result.get('graph', {}).get('node_count', 0)} 个节点。")
+        except Exception as exc:  # noqa: BLE001 - UI must keep the workflow usable.
+            st.warning(f"图谱重建失败：{exc}")
+
+    nodes = graph.get("nodes", [])
+    edges = graph.get("edges", [])
+    st.write("节点摘要")
+    st.json(nodes[:12])
+    st.write("关系摘要")
+    st.json(edges[:16])
 
 
 def _render_runtime_mode(runner: TicketFlowRunner) -> None:
@@ -2007,6 +2081,8 @@ def main() -> None:
             _render_external_ops(state)
         with tabs[5]:
             _render_audit_log(state)
+        with st.expander("知识图谱解释", expanded=False):
+            _render_ticket_kg_panel(selected_ticket)
 
     with right:
         st.markdown("#### 处理结果")

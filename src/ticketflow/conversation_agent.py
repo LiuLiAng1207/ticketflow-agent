@@ -18,6 +18,7 @@ class AgentChatContext:
     repository: RepositoryProtocol
     project_root: Path
     runner_overrides: dict[str, str] | None = None
+    knowledge_graph_store: Any | None = None
 
 
 def _extract_ticket_id(message: str) -> str | None:
@@ -149,6 +150,30 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
         )
 
     ticket_id = _extract_ticket_id(normalized)
+    explain_tokens = ("\u89e3\u91ca", "\u4e3a\u4ec0\u4e48", "\u8bc1\u636e\u94fe", "\u76f8\u4f3c\u6848\u4f8b", "\u56fe\u8c31")
+    if ticket_id and any(token in normalized for token in explain_tokens):
+        if context.knowledge_graph_store is None:
+            return _response(
+                intent="explain_ticket_graph",
+                reply="\u77e5\u8bc6\u56fe\u8c31\u670d\u52a1\u5c1a\u672a\u63a5\u5165\uff0c\u672c\u6b21\u53ea\u80fd\u67e5\u8be2\u57fa\u7840\u5de5\u5355\u72b6\u6001\uff0c\u4e0d\u80fd\u751f\u6210\u8bc1\u636e\u94fe\u89e3\u91ca\u3002",
+                data={"ticket_id": ticket_id, "graph": {"enabled": False, "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}},
+            )
+        graph = context.knowledge_graph_store.get_ticket_graph(ticket_id)
+        if graph.get("enabled") and not graph.get("nodes"):
+            from .knowledge_graph import build_ticket_graph_from_repository
+
+            built_graph = build_ticket_graph_from_repository(context.repository, ticket_id)
+            context.knowledge_graph_store.upsert_ticket_graph(built_graph)
+            graph = context.knowledge_graph_store.get_ticket_graph(ticket_id)
+        return _response(
+            intent="explain_ticket_graph",
+            reply=(
+                f"\u77e5\u8bc6\u56fe\u8c31\u5df2\u4e3a\u5de5\u5355 {ticket_id} \u6c47\u603b {graph.get('node_count', 0)} \u4e2a\u4e1a\u52a1\u8282\u70b9\u3001"
+                f"{graph.get('edge_count', 0)} \u6761\u5173\u7cfb\u3002\u5b83\u7528\u4e8e\u89e3\u91ca\u8bc1\u636e\u94fe\u548c\u5904\u7406\u8def\u5f84\uff0c\u4e0d\u4f1a\u7ed5\u8fc7\u539f\u6709\u5ba1\u6279\u4e0e\u8bc1\u636e\u5145\u5206\u6027\u6cbb\u7406\u3002"
+            ),
+            data={"ticket_id": ticket_id, "graph": graph},
+            actions=[{"type": "get_ticket_graph", "method": "GET", "path": f"/api/v1/kg/tickets/{ticket_id}"}],
+        )
     if ticket_id and any(token in normalized for token in ("处理", "运行", "启动", "执行")):
         ticket = context.repository.get_ticket(ticket_id)
         task = context.repository.create_workflow_task(ticket_id=ticket.ticket_id, mode="async")
@@ -165,6 +190,30 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
             reply=f"已为工单 {ticket.ticket_id} 创建异步处理任务 {current_task['task_id']}，后续可在任务队列中查看进度。",
             data={"ticket": _ticket_summary(ticket), "task": current_task},
             actions=[{"type": "get_task", "method": "GET", "path": f"/api/v1/tasks/{current_task['task_id']}"}],
+        )
+
+    if ticket_id and any(token in normalized for token in ("解释", "为什么", "证据链", "相似案例", "图谱")):
+        if context.knowledge_graph_store is None:
+            return _response(
+                intent="explain_ticket_graph",
+                reply="知识图谱服务尚未接入，本次只能查询基础工单状态，不能生成证据链解释。",
+                data={"ticket_id": ticket_id, "graph": {"enabled": False, "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}},
+            )
+        graph = context.knowledge_graph_store.get_ticket_graph(ticket_id)
+        if graph.get("enabled") and not graph.get("nodes"):
+            from .knowledge_graph import build_ticket_graph_from_repository
+
+            built_graph = build_ticket_graph_from_repository(context.repository, ticket_id)
+            context.knowledge_graph_store.upsert_ticket_graph(built_graph)
+            graph = context.knowledge_graph_store.get_ticket_graph(ticket_id)
+        return _response(
+            intent="explain_ticket_graph",
+            reply=(
+                f"知识图谱已为工单 {ticket_id} 汇总 {graph.get('node_count', 0)} 个业务节点、"
+                f"{graph.get('edge_count', 0)} 条关系。它用于解释证据链和处理路径，不会绕过原有审批与证据充分性治理。"
+            ),
+            data={"ticket_id": ticket_id, "graph": graph},
+            actions=[{"type": "get_ticket_graph", "method": "GET", "path": f"/api/v1/kg/tickets/{ticket_id}"}],
         )
 
     if ticket_id:

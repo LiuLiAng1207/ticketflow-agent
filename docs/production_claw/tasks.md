@@ -76,3 +76,13 @@
 - Supported intents: query ticket, create ticket, run ticket workflow, list pending approvals, list Outbox events, and submit knowledge candidates.
 - High-risk approvals are intentionally not executable directly through chat; the Agent redirects operators to durable approval surfaces.
 - Newly created chat tickets are persisted in the same repository backend and get audit events tagged as `ticket_created_from_chat`.
+
+## Phase 8 Knowledge Graph / GraphRAG Foundation
+
+- Added a `KnowledgeGraphStore` abstraction with disabled, in-memory, and Neo4j backends.
+- Added idempotent ticket graph construction from tickets, customers, orders, products, retrieved evidence, workflow tasks, approvals, and Outbox/email events.
+- Added KG API endpoints: `/api/v1/kg/health`, `/api/v1/kg/tickets/{ticket_id}/rebuild`, `/api/v1/kg/tickets/{ticket_id}`, and `/api/v1/kg/search`.
+- Added worker support for `build_knowledge_graph` so KG rebuild can move into async production queues.
+- Added conversational Agent intent for explaining a ticket decision and evidence chain through the graph.
+- Added Streamlit ops visibility for KG health and a per-ticket knowledge graph explanation panel.
+- KG is an explanation and retrieval aid only; it does not bypass sufficiency checks, tool approval, or durable HITL.

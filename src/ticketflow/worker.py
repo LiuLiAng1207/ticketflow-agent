@@ -13,6 +13,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only in partially in
     Celery = None  # type: ignore[assignment]
 
 from .graph import TicketFlowRunner
+from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .service_settings import ServiceSettings
 
 
@@ -186,6 +187,45 @@ def enqueue_pending_outbox_for_ticket(
         )
         enqueued.append({**event, "celery_task_id": celery_task_id})
     return enqueued
+
+
+def build_knowledge_graph_now(
+    *,
+    ticket_id: str,
+    project_root: str | Path,
+    task_id: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
+    store = create_knowledge_graph_store(settings)
+    try:
+        graph = build_ticket_graph_from_repository(runner.repository, ticket_id, task_id=task_id)
+        result = store.upsert_ticket_graph(graph)
+        return {
+            **result,
+            "ticket_id": ticket_id,
+            "task_id": task_id,
+            "graph": {"node_count": graph["node_count"], "edge_count": graph["edge_count"]},
+        }
+    finally:
+        store.close()
+        runner.close()
+
+
+@celery_app.task(name="ticketflow.build_knowledge_graph")
+def build_knowledge_graph_task(
+    ticket_id: str,
+    project_root: str,
+    task_id: str | None = None,
+    runner_overrides: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    return build_knowledge_graph_now(
+        ticket_id=ticket_id,
+        project_root=project_root,
+        task_id=task_id,
+        runner_overrides=runner_overrides,
+    )
 
 
 def deliver_outbox_event_now(
