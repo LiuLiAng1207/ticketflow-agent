@@ -151,6 +151,19 @@ TOOL_LABELS = {
     "mcp.submit_kb_candidate_email": "提交知识候选邮件",
 }
 
+AGENT_INTENT_LABELS = {
+    "welcome": "欢迎引导",
+    "query_ticket": "查询工单",
+    "create_ticket": "新建工单",
+    "run_ticket": "运行工单流程",
+    "list_approvals": "查看审批队列",
+    "list_outbox": "查看外部投递",
+    "explain_ticket": "解释证据链",
+    "submit_knowledge_candidate": "沉淀知识候选",
+    "agent_reply": "Agent 回复",
+    "error": "调用失败",
+}
+
 APPROVAL_MODE_LABELS = {
     "approve_reject": "批准/驳回",
     "approve_edit_reject": "批准/修改/驳回",
@@ -259,6 +272,17 @@ def _post_api_json(base_url: str, path: str, *, timeout: float = 3.0) -> dict[st
         f"{base_url.rstrip('/')}{path}",
         data=b"{}",
         headers={"Accept": "application/json", "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _post_api_json_payload(base_url: str, path: str, payload: dict[str, Any], *, timeout: float = 5.0) -> dict[str, Any]:
+    request = urllib.request.Request(
+        f"{base_url.rstrip('/')}{path}",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Accept": "application/json", "Content-Type": "application/json; charset=utf-8"},
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -391,6 +415,36 @@ def _source_list_label(values: list[str] | tuple[str, ...]) -> str:
     return "、".join(_label(SOURCE_FIELD_LABELS, value) for value in values)
 
 
+def _cjk_score(text: str) -> int:
+    return sum(1 for char in text if "\u4e00" <= char <= "\u9fff")
+
+
+def _repair_mojibake(value: Any) -> str:
+    text = "" if value is None else str(value)
+    for _ in range(2):
+        try:
+            candidate = text.encode("latin1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            break
+        if _cjk_score(candidate) > _cjk_score(text):
+            text = candidate
+        else:
+            break
+    return text
+
+
+def _display_payload(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _display_payload(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_display_payload(item) for item in value]
+    if isinstance(value, tuple):
+        return [_display_payload(item) for item in value]
+    if isinstance(value, str):
+        return _zh_text(value)
+    return value
+
+
 def _triage_summary(triage: Any, ticket: Any | None = None) -> str:
     category = _safe_label(CATEGORY_LABELS, getattr(triage, "category", None), "未识别类别")
     priority = _safe_label(PRIORITY_LABELS, getattr(triage, "priority", None), "未识别")
@@ -508,7 +562,7 @@ def _zh_text(value: Any) -> str:
     """Translate common internal enum/debug phrases for presentation only."""
     if value is None:
         return ""
-    text = str(value)
+    text = _repair_mojibake(value)
     replacements = {
         "Deterministic sufficiency validator found all required evidence.": "确定性证据充分性校验确认：当前路线所需证据已经齐全。",
         "Deterministic sufficiency validator found missing sources: order.": "确定性证据充分性校验发现缺少证据来源：订单信息。",
@@ -916,6 +970,48 @@ def _inject_styles() -> None:
             font-size: 0.76rem;
             line-height: 1.45;
             margin-top: 0.2rem;
+        }
+
+        .tf-agent-shell {
+            background:
+                radial-gradient(circle at 92% 4%, rgba(15, 91, 143, 0.14), transparent 30%),
+                linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+            border: 1px solid #c8d8e6;
+            border-radius: 22px;
+            padding: 1rem 1rem 0.9rem;
+            box-shadow: 0 16px 34px rgba(16, 36, 58, 0.09);
+            margin-bottom: 0.85rem;
+        }
+
+        .tf-agent-title {
+            color: #0f2740;
+            font-size: 1.08rem;
+            font-weight: 850;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.2rem;
+        }
+
+        .tf-agent-subtitle {
+            color: #617185;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            margin-bottom: 0.75rem;
+        }
+
+        .tf-agent-toolbar {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.45rem;
+            margin: 0.35rem 0 0.65rem;
+        }
+
+        .tf-agent-hint {
+            color: #6b7b8c;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            border-left: 3px solid #2f7da8;
+            padding-left: 0.55rem;
+            margin: 0.45rem 0 0.25rem;
         }
 
         @media (max-width: 980px) {
@@ -1949,6 +2045,137 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
         st.json({"tasks": claw_tasks[:5], "leaderboard": claw_leaderboard[:5]})
 
 
+def _call_agent_chat(project_root: Path, message: str) -> tuple[dict[str, Any] | None, str | None]:
+    api_base_url = _service_api_base_url(project_root)
+    try:
+        payload = _post_api_json_payload(
+            api_base_url,
+            "/api/v1/agent/chat",
+            {"message": message, "actor": "ops-console"},
+            timeout=8.0,
+        )
+        return _display_payload(payload), None
+    except Exception as exc:  # noqa: BLE001 - chat panel should fail softly.
+        return None, f"Agent API 暂不可用：{exc}"
+
+
+def _append_agent_message(project_root: Path, message: str) -> None:
+    cleaned = message.strip()
+    if not cleaned:
+        return
+    history = st.session_state.setdefault("agent_chat_history", [])
+    history.append({"role": "user", "content": cleaned})
+    response, error = _call_agent_chat(project_root, cleaned)
+    if error:
+        history.append({"role": "assistant", "content": error, "intent": "error", "data": {}, "actions": []})
+        return
+    assert response is not None
+    history.append(
+        {
+            "role": "assistant",
+            "content": response.get("reply", "已完成处理。"),
+            "intent": response.get("intent", "agent_reply"),
+            "data": response.get("data", {}),
+            "actions": response.get("actions", []),
+        }
+    )
+
+
+def _render_agent_message(message: dict[str, Any], index: int) -> None:
+    role = "assistant" if message.get("role") == "assistant" else "user"
+    with st.chat_message(role):
+        st.markdown(_zh_text(message.get("content", "")))
+        if role == "assistant":
+            intent = message.get("intent")
+            actions = message.get("actions") or []
+            meta_parts = []
+            if intent:
+                meta_parts.append(f"意图：{_safe_label(AGENT_INTENT_LABELS, intent, _zh_text(intent))}")
+            if actions:
+                meta_parts.append(f"动作：{len(actions)} 个")
+            if meta_parts:
+                st.caption(" · ".join(meta_parts))
+            data = message.get("data") or {}
+            if data:
+                with st.expander("查看结构化结果", expanded=False):
+                    st.json(_display_payload(data))
+
+
+def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
+    project_root = _project_root()
+    if "agent_chat_history" not in st.session_state:
+        st.session_state.agent_chat_history = [
+            {
+                "role": "assistant",
+                "content": (
+                    "我是 TicketFlow 工单 Agent。你可以直接让我查询工单、解释证据链、启动处理流程、"
+                    "查看待审批和 Outbox，也可以用自然语言新建工单。"
+                ),
+                "intent": "welcome",
+                "data": {
+                    "examples": [
+                        f"查询 {selected_ticket.ticket_id} 的状态",
+                        f"解释 {selected_ticket.ticket_id} 的证据链",
+                        "查看待审批",
+                        "新建工单：标题：企业客户无法登录；正文：多次重置密码仍失败；客户等级：企业客户；产品：运维控制台",
+                    ]
+                },
+                "actions": [],
+            }
+        ]
+
+    st.markdown(
+        """
+        <div class="tf-agent-shell">
+            <div class="tf-agent-title">工单 Agent Copilot</div>
+            <div class="tf-agent-subtitle">
+                可对话操作入口：查询工单、创建工单、启动流程、解释证据链、沉淀知识候选。
+                写入类动作仍会经过审批、Outbox 和 Skill 权限治理。
+            </div>
+            <div class="tf-agent-hint">当前上下文已绑定选中工单，可直接点击快捷指令。</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    quick_actions = [
+        ("查状态", f"查询 {selected_ticket.ticket_id} 的状态"),
+        ("解释证据链", f"解释 {selected_ticket.ticket_id} 的证据链"),
+        ("启动处理", f"处理工单 {selected_ticket.ticket_id}"),
+        ("待审批", "查看待审批"),
+        ("Outbox", "查看 outbox 投递状态"),
+        ("沉淀知识", f"将 {selected_ticket.ticket_id} 的处理经验沉淀为知识候选"),
+    ]
+    button_cols = st.columns(3)
+    for idx, (label, prompt) in enumerate(quick_actions):
+        if button_cols[idx % 3].button(label, key=f"agent_quick_{idx}_{selected_ticket.ticket_id}", use_container_width=True):
+            _append_agent_message(project_root, prompt)
+            st.rerun()
+
+    for index, message in enumerate(st.session_state.agent_chat_history[-8:]):
+        _render_agent_message(message, index)
+
+    with st.form("agent_chat_form", clear_on_submit=True):
+        prompt = st.text_area(
+            "输入给工单 Agent",
+            placeholder=(
+                f"例如：解释 {selected_ticket.ticket_id} 为什么这样处理，或者："
+                "新建工单：标题：企业客户无法登录；正文：多次重置密码仍失败；客户等级：企业客户；产品：运维控制台"
+            ),
+            height=86,
+        )
+        form_cols = st.columns([1.1, 1.0])
+        submitted = form_cols[0].form_submit_button("发送给 Agent", type="primary", use_container_width=True)
+        clear_history = form_cols[1].form_submit_button("清空对话", use_container_width=True)
+
+    if clear_history:
+        st.session_state.pop("agent_chat_history", None)
+        st.rerun()
+    if submitted:
+        _append_agent_message(project_root, prompt)
+        st.rerun()
+
+
 def _render_ticket_kg_panel(ticket: TicketRecord) -> None:
     graph = _load_ticket_graph_snapshot(_project_root(), ticket.ticket_id)
     if not graph.get("enabled"):
@@ -2101,6 +2328,8 @@ def main() -> None:
         st.session_state.pop("workflow_error", None)
     st.session_state.selected_ticket_id = selected_ticket_id
     selected_ticket = ticket_map[selected_ticket_id]
+
+    _render_agent_workspace(selected_ticket)
 
     action_cols = st.columns([1.2, 1.0, 4.0])
     if action_cols[0].button("运行工作流", type="primary", use_container_width=True):
