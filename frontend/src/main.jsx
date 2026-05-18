@@ -15,6 +15,14 @@ const statusLabels = {
   pending: "待处理",
 };
 
+const categoryLabels = {
+  billing_refund: "退款账单",
+  technical_issue: "技术故障",
+  delivery_issue: "交付物流",
+  account_access: "账号访问",
+  general_inquiry: "一般咨询",
+};
+
 const intentLabels = {
   identity: "身份说明",
   ops_summary: "运营统计",
@@ -53,6 +61,8 @@ const actionLabels = {
   open_approvals: "打开审批",
 };
 
+const runwaySteps = ["识别意图", "读取上下文", "调用 Skill", "进入队列", "审计留痕"];
+
 async function api(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -71,11 +81,11 @@ async function api(path, options = {}) {
   return response.json();
 }
 
-function shortId(value) {
+function shortId(value, head = 9, tail = 5) {
   if (!value) return "无编号";
   const text = String(value);
-  if (text.length <= 18) return text;
-  return `${text.slice(0, 10)}…${text.slice(-5)}`;
+  if (text.length <= head + tail + 1) return text;
+  return `${text.slice(0, head)}…${text.slice(-tail)}`;
 }
 
 function App() {
@@ -122,6 +132,12 @@ function App() {
         .includes(needle),
     );
   }, [tickets, query]);
+
+  const latest = latestAssistant(messages);
+  const latestEvents = latest?.events || [];
+  const batchRows = latest?.data?.tasks || latest?.data?.skill_run?.result?.tasks || [];
+  const activeTaskCount = tasks.filter((task) => ["queued", "running", "waiting_approval"].includes(task.status)).length;
+  const pendingApprovalCount = approvals.filter((item) => (item.status || "pending") === "pending").length;
 
   async function loadAll() {
     setLastError("");
@@ -290,7 +306,6 @@ function App() {
     }
   }
 
-  const latest = latestAssistant(messages);
   const quickPrompts = [
     "你是谁",
     "帮我分析待处理工单的数量",
@@ -302,62 +317,79 @@ function App() {
   ].filter(Boolean);
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-mark">TF</span>
+    <div className="ops-shell">
+      <aside className="ticket-radar">
+        <div className="brand-lockup">
+          <div className="brand-orb">TF</div>
           <div>
             <p>TicketFlow</p>
-            <strong>Agent Ops Console</strong>
+            <strong>Agent Command</strong>
           </div>
         </div>
 
-        <section className="status-strip">
-          <StatusDot label="API 服务" value={health.api} ok={health.api === "可用"} />
-          <StatusDot label="模型模式" value={health.ready?.model_backend || "读取中"} />
-          <StatusDot label="KG 后端" value={health.ready?.kg_backend || "未知"} />
-        </section>
-
-        <div className="metric-grid">
-          <Metric label="开放工单" value={summary?.open_tickets ?? "—"} />
-          <Metric label="企业客户" value={summary?.enterprise_tickets ?? "—"} />
-          <Metric label="风险关注" value={summary?.risk_watch_tickets ?? "—"} />
-          <Metric label="退款相关" value={summary?.refund_related_tickets ?? "—"} />
+        <div className="health-stack">
+          <StatusDot label="API" value={health.api} ok={health.api === "可用"} />
+          <StatusDot label="模型" value={health.ready?.model_backend || "读取中"} />
+          <StatusDot label="图谱" value={health.ready?.kg_backend || "未配置"} />
         </div>
 
-        <div className="section-title">
-          <span>工单队列</span>
-          <button onClick={loadAll}>刷新</button>
+        <div className="radar-metrics">
+          <Metric label="开放" value={summary?.open_tickets ?? "—"} />
+          <Metric label="风险" value={summary?.risk_watch_tickets ?? "—"} />
+          <Metric label="审批" value={pendingApprovalCount} />
+          <Metric label="任务" value={activeTaskCount} />
         </div>
-        <input className="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索工单、产品、客户等级" />
-        <div className="ticket-list">
+
+        <div className="rail-head">
+          <div>
+            <span>工单雷达</span>
+            <small>{filteredTickets.length} 条可见</small>
+          </div>
+          <button onClick={loadAll}>同步</button>
+        </div>
+        <input className="radar-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索编号、标题、产品或等级" />
+        <div className="ticket-stream">
           {filteredTickets.map((ticket) => (
             <button
-              className={`ticket-item ${selectedTicket?.ticket_id === ticket.ticket_id ? "active" : ""}`}
+              className={`ticket-row ${selectedTicket?.ticket_id === ticket.ticket_id ? "active" : ""}`}
               key={ticket.ticket_id}
               onClick={() => setSelectedTicketId(ticket.ticket_id)}
             >
               <span>{ticket.ticket_id}</span>
               <strong>{ticket.title}</strong>
               <small>
-                {ticket.expected_category} · {ticket.customer_tier}
+                {categoryLabels[ticket.expected_category] || ticket.expected_category} / {ticket.customer_tier}
               </small>
             </button>
           ))}
         </div>
       </aside>
 
-      <main className="conversation">
-        <header className="workspace-header">
+      <main className="command-canvas">
+        <section className="command-hero">
           <div>
-            <p className="eyebrow">Agent 对话工作台</p>
-            <h1>可对话、可追踪、可审批的工单 Agent</h1>
+            <p className="eyebrow">Agent Operations</p>
+            <h1>工单处理，不再像黑盒。</h1>
+            <span>每次对话都会显示意图、工具调用、任务队列、证据链和治理边界。</span>
           </div>
-          <div className="header-actions">
-            <span>{busy ? "Agent 执行中" : "实时就绪"}</span>
-            <button onClick={loadAll}>同步数据</button>
+          <div className="hero-actions">
+            <button onClick={() => sendMessage("帮我批量处理10张工单")} disabled={busy}>
+              批量处理低风险工单
+            </button>
+            <button className="secondary" onClick={() => sendMessage(selectedTicket ? `解释 ${selectedTicket.ticket_id} 的证据链` : "解释当前工单的证据链")} disabled={busy}>
+              解释证据链
+            </button>
           </div>
-        </header>
+        </section>
+
+        <section className="agent-runway">
+          {runwaySteps.map((step, index) => (
+            <div className={index <= Math.max(0, latestEvents.length - 1) ? "runway-step active" : "runway-step"} key={step}>
+              <i>{index + 1}</i>
+              <span>{step}</span>
+            </div>
+          ))}
+        </section>
 
         {lastError ? <div className="error-banner">{lastError}</div> : null}
 
@@ -369,92 +401,55 @@ function App() {
           ))}
         </div>
 
-        <ChatThread messages={messages} />
-        <BatchResultInline message={latest} />
-
-        <form
-          className="composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            sendMessage();
-          }}
-        >
-          <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="例如：帮我批量处理10张工单，然后问：你处理了哪10条？" />
-          <button disabled={busy || !input.trim()}>{busy ? "执行中" : "发送"}</button>
-        </form>
+        <section className="dialogue-surface">
+          <ChatThread messages={messages} />
+          <BatchResultInline rows={batchRows} />
+          <form
+            className="composer"
+            onSubmit={(event) => {
+              event.preventDefault();
+              sendMessage();
+            }}
+          >
+            <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="问 Agent：帮我批量处理10张工单，然后问处理了哪10条" />
+            <button disabled={busy || !input.trim()}>{busy ? "执行中" : "发送"}</button>
+          </form>
+        </section>
       </main>
 
-      <aside className="inspector">
-        <section className="panel hero-panel">
-          <p className="eyebrow">当前工单</p>
+      <aside className="governance-inspector">
+        <section className="selected-ticket">
+          <div className="section-kicker">当前工单</div>
           {selectedTicket ? (
             <>
-              <h3>{selectedTicket.ticket_id}</h3>
+              <h2>{selectedTicket.ticket_id}</h2>
               <p>{selectedTicket.title}</p>
               <div className="pill-row">
-                <Pill tone="blue">{selectedTicket.expected_category}</Pill>
+                <Pill tone="blue">{categoryLabels[selectedTicket.expected_category] || selectedTicket.expected_category}</Pill>
                 <Pill tone={selectedTicket.customer_tier === "enterprise" ? "amber" : "green"}>{selectedTicket.customer_tier}</Pill>
                 <Pill>{statusLabels[selectedTicket.status] || selectedTicket.status}</Pill>
               </div>
             </>
           ) : (
-            <EmptyState title="未选择工单" text="从左侧选择一个工单后会显示证据链、治理链和审计轨迹。" />
+            <EmptyState title="未选择工单" text="从左侧选择一个工单后显示证据链和治理链。" />
           )}
         </section>
 
-        <section className="panel context-panel pinned">
-          <div className="panel-title">
-            <span>证据链与治理链</span>
-            <Pill tone={inspectorBusy ? "amber" : "green"}>{inspectorBusy ? "加载中" : "已同步"}</Pill>
-          </div>
+        <section className="inspector-panel evidence-panel">
+          <PanelTitle title="证据链与治理链" value={inspectorBusy ? "加载中" : "已同步"} tone={inspectorBusy ? "amber" : "green"} />
           <EvidenceGraph graph={ticketGraph} />
           <AuditTimeline events={auditEvents} />
         </section>
 
-        <section className="panel context-panel">
-          <div className="panel-title">
-            <span>最近 Agent 轨迹</span>
-            <Pill tone="blue">{latest?.events?.length || 0} 步</Pill>
-          </div>
-          <EventTimeline events={latest?.events || []} />
+        <section className="inspector-panel">
+          <PanelTitle title="最近 Agent 轨迹" value={`${latestEvents.length || 0} 步`} tone="blue" />
+          <EventTimeline events={latestEvents} />
         </section>
 
         <QueuePanel title="任务队列" items={tasks} empty="暂无工作流任务" type="task" />
         <QueuePanel title="审批队列" items={approvals} empty="暂无待审批请求" type="approval" />
         <QueuePanel title="Outbox 投递" items={outbox} empty="暂无 Outbox 事件" type="outbox" />
-
-        <section className="panel compact">
-          <div className="panel-title">
-            <span>Claw 评测中心</span>
-            <Pill tone="blue">{clawTasks.length}</Pill>
-          </div>
-          {clawTasks.length ? (
-            clawTasks.slice(0, 5).map((task) => (
-              <div className="claw-row" key={task.task_id}>
-                <div>
-                  <strong>{task.name || task.task_id}</strong>
-                  <span>{task.goal || "Agent 任务评测"}</span>
-                </div>
-                <button onClick={() => runClawTask(task.task_id)} disabled={busy}>
-                  运行
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="stack-gap">
-              <EmptyState title="Claw 未加载" text="点击加载任务后显示评测集、运行按钮、分数和失败原因。" />
-              <button className="full-button" onClick={reloadClawTasks} disabled={busy}>
-                加载 Claw 任务
-              </button>
-            </div>
-          )}
-          {leaderboard.slice(0, 4).map((row) => (
-            <div className="leaderboard-row" key={`${row.task_id}-${row.latest_run_id}`}>
-              <span>{row.task_id}</span>
-              <strong>{Number(row.average_score || 0).toFixed(3)}</strong>
-            </div>
-          ))}
-        </section>
+        <ClawPanel tasks={clawTasks} leaderboard={leaderboard} busy={busy} onReload={reloadClawTasks} onRun={runClawTask} />
       </aside>
     </div>
   );
@@ -476,7 +471,7 @@ function Metric({ label, value }) {
 function StatusDot({ label, value, ok = true }) {
   return (
     <div className="status-dot">
-      <i className={ok ? "ok" : "bad"} />
+      <i className={ok ? "ok" : "warn"} />
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
@@ -524,15 +519,11 @@ function ChatThread({ messages }) {
   );
 }
 
-function BatchResultInline({ message }) {
-  const rows = message?.data?.tasks || message?.data?.skill_run?.result?.tasks || [];
+function BatchResultInline({ rows }) {
   if (!rows?.length) return null;
   return (
     <section className="batch-strip">
-      <div className="panel-title">
-        <span>批量处理结果</span>
-        <Pill tone="blue">{rows.length} 条</Pill>
-      </div>
+      <PanelTitle title="批量处理结果" value={`${rows.length} 条`} tone="blue" />
       <div className="batch-grid">
         {rows.slice(0, 10).map((task, index) => (
           <div className="batch-card" key={task.task_id || index}>
@@ -548,7 +539,7 @@ function BatchResultInline({ message }) {
 
 function EventTimeline({ events, compact = false }) {
   if (!events?.length) {
-    return <EmptyState title="暂无轨迹" text="Agent 执行后会在这里显示意图识别、工具调用、审批和完成状态。" />;
+    return <EmptyState title="暂无轨迹" text="Agent 执行后会显示意图识别、工具调用、审批和完成状态。" />;
   }
   return (
     <div className={`timeline ${compact ? "compact-timeline" : ""}`}>
@@ -633,11 +624,8 @@ function AuditTimeline({ events }) {
 
 function QueuePanel({ title, items, empty, type }) {
   return (
-    <section className="panel compact">
-      <div className="panel-title">
-        <span>{title}</span>
-        <Pill>{items.length}</Pill>
-      </div>
+    <section className="inspector-panel compact">
+      <PanelTitle title={title} value={String(items.length)} />
       {items.length ? (
         items.slice(0, 5).map((item) => {
           const view = queueView(item, type);
@@ -652,8 +640,42 @@ function QueuePanel({ title, items, empty, type }) {
           );
         })
       ) : (
-        <EmptyState title={empty} text="队列为空时说明当前没有阻塞项。" />
+        <EmptyState title={empty} text="队列为空说明当前没有阻塞项。" />
       )}
+    </section>
+  );
+}
+
+function ClawPanel({ tasks, leaderboard, busy, onReload, onRun }) {
+  return (
+    <section className="inspector-panel compact">
+      <PanelTitle title="Claw 评测中心" value={String(tasks.length)} tone="blue" />
+      {tasks.length ? (
+        tasks.slice(0, 5).map((task) => (
+          <div className="claw-row" key={task.task_id}>
+            <div>
+              <strong>{task.name || task.task_id}</strong>
+              <span>{task.goal || "Agent 任务评测"}</span>
+            </div>
+            <button onClick={() => onRun(task.task_id)} disabled={busy}>
+              运行
+            </button>
+          </div>
+        ))
+      ) : (
+        <div className="stack-gap">
+          <EmptyState title="Claw 未加载" text="点击加载任务后显示评测集、运行按钮、分数和失败原因。" />
+          <button className="full-button" onClick={onReload} disabled={busy}>
+            加载 Claw 任务
+          </button>
+        </div>
+      )}
+      {leaderboard.slice(0, 4).map((row) => (
+        <div className="leaderboard-row" key={`${row.task_id}-${row.latest_run_id}`}>
+          <span>{row.task_id}</span>
+          <strong>{Number(row.average_score || 0).toFixed(3)}</strong>
+        </div>
+      ))}
     </section>
   );
 }
@@ -663,7 +685,7 @@ function queueView(item, type) {
     return {
       key: item.task_id,
       title: item.ticket_id || "未知工单",
-      subtitle: `任务 ${shortId(item.task_id)} · ${item.mode || "async"}`,
+      subtitle: `任务 ${shortId(item.task_id)} / ${item.mode || "async"}`,
       status: statusLabels[item.status] || item.status || "未知",
     };
   }
@@ -671,16 +693,25 @@ function queueView(item, type) {
     return {
       key: item.approval_id,
       title: item.ticket_id || item.tool_name || "审批请求",
-      subtitle: `审批 ${shortId(item.approval_id)} · ${item.tool_name || "工具"}`,
+      subtitle: `审批 ${shortId(item.approval_id)} / ${item.tool_name || "工具"}`,
       status: statusLabels[item.status] || item.status || "待审批",
     };
   }
   return {
     key: item.event_id,
     title: item.ticket_id || item.operation_type || "Outbox",
-    subtitle: `${item.operation_type || "外部投递"} · ${shortId(item.event_id)}`,
+    subtitle: `${item.operation_type || "外部投递"} / ${shortId(item.event_id)}`,
     status: statusLabels[item.status] || item.status || "未知",
   };
+}
+
+function PanelTitle({ title, value, tone = "neutral" }) {
+  return (
+    <div className="panel-title">
+      <span>{title}</span>
+      <Pill tone={tone}>{value}</Pill>
+    </div>
+  );
 }
 
 function Pill({ children, tone = "neutral" }) {
