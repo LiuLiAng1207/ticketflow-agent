@@ -40,6 +40,12 @@ class ServiceSettings:
     skills_dir: Path | None = None
     enable_skill_runtime: bool = True
     claw_tasks_dir: Path | None = None
+    ticketflow_mcp_transport: str = "stdio"
+    ticketflow_mcp_host: str = "127.0.0.1"
+    ticketflow_mcp_port: int = 8000
+    ticketflow_mcp_allowed_scopes: str = "read,eval"
+    ticketflow_mcp_enable_write_tools: bool = False
+    ticketflow_mcp_actor: str = "mcp-client"
     neo4j_user: str | None = "neo4j"
     neo4j_password: str | None = None
     kg_backend: str = "disabled"
@@ -91,6 +97,16 @@ class ServiceSettings:
             skills_dir=skills_dir.resolve(),
             enable_skill_runtime=_get_bool("ENABLE_SKILL_RUNTIME", True, overrides),
             claw_tasks_dir=claw_tasks_dir.resolve(),
+            ticketflow_mcp_transport=(
+                _get_env("TICKETFLOW_MCP_TRANSPORT", overrides, "stdio") or "stdio"
+            ).strip().lower(),
+            ticketflow_mcp_host=_get_env("TICKETFLOW_MCP_HOST", overrides, "127.0.0.1") or "127.0.0.1",
+            ticketflow_mcp_port=int(_get_env("TICKETFLOW_MCP_PORT", overrides, "8000") or "8000"),
+            ticketflow_mcp_allowed_scopes=(
+                _get_env("TICKETFLOW_MCP_ALLOWED_SCOPES", overrides, "read,eval") or "read,eval"
+            ),
+            ticketflow_mcp_enable_write_tools=_get_bool("TICKETFLOW_MCP_ENABLE_WRITE_TOOLS", False, overrides),
+            ticketflow_mcp_actor=_get_env("TICKETFLOW_MCP_ACTOR", overrides, "mcp-client") or "mcp-client",
         )
 
     def readiness_payload(self, *, sqlite_db_path: Path | None = None) -> dict[str, object]:
@@ -129,6 +145,14 @@ class ServiceSettings:
                 },
                 "claw_harness": {
                     "tasks_dir": str(self.claw_tasks_dir) if self.claw_tasks_dir else None,
+                },
+                "platform_mcp": {
+                    "transport": self.ticketflow_mcp_transport,
+                    "host": self.ticketflow_mcp_host,
+                    "port": self.ticketflow_mcp_port,
+                    "allowed_scopes": self.ticketflow_mcp_allowed_scopes,
+                    "write_tools_enabled": self.ticketflow_mcp_enable_write_tools,
+                    "actor": self.ticketflow_mcp_actor,
                 },
             },
         }

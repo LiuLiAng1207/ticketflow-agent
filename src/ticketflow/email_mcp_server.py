@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 import smtplib
 from dataclasses import dataclass
-from email.header import Header
 from datetime import datetime
+from email.header import Header
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 from typing import Any
@@ -30,7 +30,7 @@ class SMTPSettings:
             username=os.getenv("SMTP_USERNAME", "ticketflow-local@example.com"),
             auth_code=os.getenv("SMTP_AUTH_CODE", ""),
             use_tls=os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes", "on"},
-            from_name=os.getenv("EMAIL_FROM_NAME", "TicketFlow Agent"),
+            from_name=os.getenv("EMAIL_FROM_NAME", "TicketFlow 工单协同智能体"),
         )
 
 

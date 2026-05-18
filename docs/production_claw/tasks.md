@@ -106,3 +106,13 @@
 - Added Claw API endpoints for reload, task list, task detail, sync/async run, run detail, and leaderboard.
 - Added worker support for `run_claw_task` and Skill Runtime integration through `ticketflow-claw-eval`.
 - Streamlit production control panel now surfaces Claw task and leaderboard snapshots.
+
+## Phase 11 Platform MCP Service
+
+- Add a platform MCP server separate from the SMTP email MCP server.
+- Expose governed tools for tickets, workflow task submission, approvals, Outbox, KG explanation, Skill Runtime, Claw, and conversational Agent operations.
+- Expose read-only MCP resources for ticket detail, ticket audit, ticket KG graph, Skill manifest, and Claw run detail.
+- Expose MCP prompts for ticket explanation, triage, knowledge candidate generation, and Claw failure analysis.
+- Keep write tools disabled by default through `TICKETFLOW_MCP_ENABLE_WRITE_TOOLS=false`.
+- Route all write tools through existing repository, Skill Runtime, Claw Runtime, approval, and Outbox paths; do not expose shell, raw SQL, or arbitrary Python execution.
+- Fix email MCP Chinese subject/body/tool descriptions so real inbox demos do not show mojibake.

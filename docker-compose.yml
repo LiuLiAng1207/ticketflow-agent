@@ -21,12 +21,20 @@ services:
       SKILLS_DIR: skills
       ENABLE_SKILL_RUNTIME: "true"
       CLAW_TASKS_DIR: claw_tasks
+      TICKETFLOW_MCP_TRANSPORT: streamable-http
+      TICKETFLOW_MCP_HOST: 0.0.0.0
+      TICKETFLOW_MCP_PORT: 8010
+      TICKETFLOW_MCP_ALLOWED_SCOPES: read,eval
+      TICKETFLOW_MCP_ENABLE_WRITE_TOOLS: "false"
+      TICKETFLOW_MCP_ACTOR: docker-mcp-client
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     ports:
       - "8000:8000"
     volumes:
       - ticketflow-generated:/app/data/generated
+    expose:
+      - "8010"
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,6 +62,37 @@ services:
       ENABLE_SKILL_RUNTIME: "true"
       CLAW_TASKS_DIR: claw_tasks
       MINIO_ENDPOINT: http://minio:9000
+      ENABLE_PRODUCTION_SERVICES: "true"
+    volumes:
+      - ticketflow-generated:/app/data/generated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mcp:
+    build: .
+    command: ticketflow-platform-mcp
+    environment:
+      APP_ENV: production-skeleton
+      DATABASE_BACKEND: postgres
+      DATABASE_URL: postgresql://ticketflow:ticketflow@postgres:5432/ticketflow
+      REDIS_URL: redis://redis:6379/0
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ticketflow-password
+      KG_BACKEND: neo4j
+      SKILL_REGISTRY_BACKEND: repository
+      SKILLS_DIR: skills
+      ENABLE_SKILL_RUNTIME: "true"
+      CLAW_TASKS_DIR: claw_tasks
+      TICKETFLOW_MCP_TRANSPORT: streamable-http
+      TICKETFLOW_MCP_HOST: 0.0.0.0
+      TICKETFLOW_MCP_PORT: 8010
+      TICKETFLOW_MCP_ALLOWED_SCOPES: read,eval
+      TICKETFLOW_MCP_ENABLE_WRITE_TOOLS: "false"
+      TICKETFLOW_MCP_ACTOR: docker-mcp-client
       ENABLE_PRODUCTION_SERVICES: "true"
     volumes:
       - ticketflow-generated:/app/data/generated

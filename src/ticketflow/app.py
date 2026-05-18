@@ -1895,9 +1895,19 @@ def _render_production_control_panel(runner: TicketFlowRunner) -> None:
     if isinstance(ready, dict) and ready:
         database = ready.get("database") if isinstance(ready.get("database"), dict) else {}
         celery = ready.get("dependencies", {}).get("celery", {}) if isinstance(ready.get("dependencies"), dict) else {}
+        platform_mcp = (
+            ready.get("dependencies", {}).get("platform_mcp", {}) if isinstance(ready.get("dependencies"), dict) else {}
+        )
         st.sidebar.caption(f"API 地址：{snapshot['api_base_url']}")
         st.sidebar.caption(f"数据后端：{database.get('backend', 'unknown')}")
         st.sidebar.caption(f"Celery：{'队列模式' if not celery.get('task_always_eager') else '本地同步模式'}")
+        if platform_mcp:
+            st.sidebar.caption(
+                "平台 MCP："
+                f"{platform_mcp.get('transport', 'stdio')} "
+                f"{platform_mcp.get('host', '127.0.0.1')}:{platform_mcp.get('port', 8000)} "
+                f"/ scopes={platform_mcp.get('allowed_scopes', 'read,eval')}"
+            )
 
     kg_health = snapshot.get("kg_health") if isinstance(snapshot.get("kg_health"), dict) else {}
     kg_status = kg_health.get("status", "unknown")

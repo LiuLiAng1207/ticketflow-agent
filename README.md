@@ -79,6 +79,59 @@ celery -A ticketflow.worker:celery_app worker --loglevel=INFO --pool=solo
 
 `run_claw_task` executes registered Claw benchmark tasks from `claw_tasks/*.yaml`. Each run records attempts, trajectory events, deterministic verifier scores, and leaderboard rows. Claw is an evaluation harness only; it does not bypass sufficiency checks, durable approvals, Skill permissions, or Outbox idempotency.
 
+## Platform MCP
+
+```bash
+ticketflow-platform-mcp
+```
+
+TicketFlow Platform MCP exposes the production platform to external Agent clients through MCP tools, resources, and prompts. It is separate from the email MCP server. The email MCP server still handles SMTP delivery only; the platform MCP is the governed access layer for tickets, approvals, Outbox, KG, Skill Runtime, Claw, and the conversational Agent.
+
+Default safety posture:
+
+- `TICKETFLOW_MCP_TRANSPORT=stdio`
+- `TICKETFLOW_MCP_HOST=127.0.0.1`
+- `TICKETFLOW_MCP_PORT=8000`
+- `TICKETFLOW_MCP_ALLOWED_SCOPES=read,eval`
+- `TICKETFLOW_MCP_ENABLE_WRITE_TOOLS=false`
+- `TICKETFLOW_MCP_ACTOR=mcp-client`
+
+Read/eval tools are available by default. Write tools such as workflow submission, approval decisions, Skill execution, and conversational Agent actions require `TICKETFLOW_MCP_ENABLE_WRITE_TOOLS=true`. Even when enabled, these tools call existing governed paths and do not bypass sufficiency checks, durable approvals, Skill permissions, Claw Runtime, or Outbox idempotency.
+
+Core MCP tools:
+
+- `ticketflow.tickets.list`
+- `ticketflow.tickets.get`
+- `ticketflow.tickets.audit`
+- `ticketflow.workflow.run`
+- `ticketflow.approvals.list`
+- `ticketflow.approvals.decide`
+- `ticketflow.outbox.list`
+- `ticketflow.kg.explain_ticket`
+- `ticketflow.kg.search`
+- `ticketflow.skills.list`
+- `ticketflow.skills.run`
+- `ticketflow.claw.tasks.list`
+- `ticketflow.claw.run`
+- `ticketflow.claw.runs.get`
+- `ticketflow.claw.leaderboard`
+- `ticketflow.agent.chat`
+
+Core MCP resources:
+
+- `ticketflow://tickets/{ticket_id}`
+- `ticketflow://tickets/{ticket_id}/audit`
+- `ticketflow://kg/tickets/{ticket_id}`
+- `ticketflow://skills/{skill_id}`
+- `ticketflow://claw/runs/{run_id}`
+
+Core MCP prompts:
+
+- `explain_ticket(ticket_id)`
+- `triage_ticket(title, body, customer_tier, product)`
+- `kb_candidate_from_ticket(ticket_id)`
+- `claw_failure_analysis(run_id)`
+
 ## Docker Compose
 
 ```bash
