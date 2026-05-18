@@ -9,12 +9,14 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from .claw import ClawRegistry, ClawRuntime
 from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
+from .llm import OpenAICompatClient
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
 from .observability import (
     classify_error,
@@ -117,6 +119,29 @@ def _get_claw_runtime(request: Request) -> ClawRuntime:
         project_root=request.app.state.project_root,
         runner_overrides=request.app.state.runner_overrides,
     )
+
+
+def _get_agent_llm_client(request: Request) -> OpenAICompatClient | None:
+    client = getattr(request.app.state, "agent_llm_client", None)
+    if client is not None:
+        return client
+    runner = _get_runner(request)
+    settings = runner.settings
+    if not settings.cloud_llm_enabled:
+        return None
+    client = OpenAICompatClient(
+        base_url=settings.cloud_api_base_url,
+        api_key=settings.cloud_api_key,
+        model=settings.cloud_model_name,
+        source_label="llm_cloud",
+        chat_path=settings.cloud_api_chat_path,
+        verify=settings.cloud_api_ca_cert or True,
+        max_tokens=320,
+        temperature=0.0,
+        timeout=20,
+    )
+    request.app.state.agent_llm_client = client
+    return client
 
 
 def _ticket_or_404(runner: TicketFlowRunner, ticket_id: str):
@@ -235,6 +260,20 @@ def create_app(
     app.state.runner_overrides = runner_overrides
     app.state.runner = None
     app.state.kg_store = None
+    app.state.agent_llm_client = None
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://127.0.0.1:5173",
+            "http://localhost:5173",
+            "http://127.0.0.1:4173",
+            "http://localhost:4173",
+        ],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.middleware("http")
     async def observability_middleware(request: Request, call_next):
@@ -456,6 +495,7 @@ def create_app(
             project_root=request.app.state.project_root,
             runner_overrides=request.app.state.runner_overrides,
             knowledge_graph_store=_get_kg_store(request),
+            llm_client=_get_agent_llm_client(request),
         )
         try:
             result = handle_agent_chat(payload.message, context)

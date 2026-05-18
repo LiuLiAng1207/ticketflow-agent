@@ -2170,7 +2170,7 @@ def _call_agent_chat(project_root: Path, message: str) -> tuple[dict[str, Any] |
             api_base_url,
             "/api/v1/agent/chat",
             {"message": message, "actor": "ops-console"},
-            timeout=8.0,
+            timeout=4.0,
         )
         return _display_payload(payload), None
     except Exception as exc:  # noqa: BLE001 - chat panel should fail softly.
@@ -2201,34 +2201,23 @@ def _append_agent_message(project_root: Path, message: str) -> None:
 
 def _render_agent_message(message: dict[str, Any], index: int) -> None:
     role = "assistant" if message.get("role") == "assistant" else "user"
-    role_label = "你" if role == "user" else "TicketFlow Agent"
-    content = html.escape(_zh_text(message.get("content", ""))).replace("\n", "<br>")
-    meta_parts = []
-    if role == "assistant":
-        intent = message.get("intent")
-        actions = message.get("actions") or []
-        if intent:
-            meta_parts.append(f"意图：{_safe_label(AGENT_INTENT_LABELS, intent, _zh_text(intent))}")
-        if actions:
-            meta_parts.append(f"可执行动作：{len(actions)} 个")
-    meta_html = f'<div class="tf-chat-meta">{html.escape(" · ".join(meta_parts))}</div>' if meta_parts else ""
-    st.markdown(
-        f"""
-        <div class="tf-chat-row tf-chat-row-{role}">
-            <div class="tf-chat-bubble tf-chat-bubble-{role}">
-                <div class="tf-chat-role">{role_label}</div>
-                <div>{content}</div>
-                {meta_html}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if role == "assistant":
-        data = message.get("data") or {}
-        if data:
-            with st.expander(f"查看第 {index + 1} 条结构化结果", expanded=False):
-                st.json(_display_payload(data))
+    avatar = "🧑" if role == "user" else "🤖"
+    with st.chat_message(role, avatar=avatar):
+        st.markdown(_zh_text(message.get("content", "")))
+        if role == "assistant":
+            intent = message.get("intent")
+            actions = message.get("actions") or []
+            meta_parts = []
+            if intent:
+                meta_parts.append(f"意图：{_safe_label(AGENT_INTENT_LABELS, intent, _zh_text(intent))}")
+            if actions:
+                meta_parts.append(f"可执行动作：{len(actions)} 个")
+            if meta_parts:
+                st.caption(" · ".join(meta_parts))
+            data = message.get("data") or {}
+            if data:
+                with st.expander(f"查看第 {index + 1} 条结构化结果", expanded=False):
+                    st.json(_display_payload(data))
 
 
 def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
@@ -2298,7 +2287,7 @@ def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
                 _render_agent_message(message, index)
 
         with st.form("agent_chat_form", clear_on_submit=True):
-            prompt = st.text_area(
+            user_prompt = st.text_area(
                 "输入给工单 Agent",
                 placeholder=(
                     f"例如：解释 {selected_ticket.ticket_id} 为什么这样处理，或者："
@@ -2325,16 +2314,16 @@ def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
             unsafe_allow_html=True,
         )
         st.markdown('<div class="tf-agent-section-title">快捷指令</div>', unsafe_allow_html=True)
-        for idx, (label, prompt) in enumerate(quick_actions):
+        for idx, (label, action_prompt) in enumerate(quick_actions):
             if st.button(label, key=f"agent_quick_{idx}_{selected_ticket.ticket_id}", use_container_width=True):
-                _append_agent_message(project_root, prompt)
+                _append_agent_message(project_root, action_prompt)
                 st.rerun()
 
     if clear_history:
         st.session_state.pop("agent_chat_history", None)
         st.rerun()
     if submitted:
-        _append_agent_message(project_root, prompt)
+        _append_agent_message(project_root, user_prompt)
         st.rerun()
 
 

@@ -25,6 +25,38 @@ def test_agent_chat_can_query_ticket_status(ticketflow_project):
     assert payload["intent"] == "query_ticket"
     assert payload["data"]["ticket"]["ticket_id"] == ticket["ticket_id"]
     assert ticket["ticket_id"] in payload["reply"]
+    assert payload["events"]
+    assert payload["model_source"] in {"deterministic", "deepseek", "fallback"}
+
+
+def test_agent_chat_introduces_itself_without_falling_back_to_help(ticketflow_project):
+    client = next(_client(ticketflow_project))
+
+    response = client.post("/api/v1/agent/chat", json={"message": "你是谁"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "identity"
+    assert payload["model_source"] == "deterministic"
+    assert "TicketFlow" in payload["reply"]
+    assert "DeepSeek" in payload["reply"]
+    assert payload["events"][0]["event_type"] == "intent_detected"
+
+
+def test_agent_chat_can_analyze_pending_ticket_counts(ticketflow_project):
+    client = next(_client(ticketflow_project))
+    summary = client.get("/api/v1/ops/summary").json()
+
+    response = client.post("/api/v1/agent/chat", json={"message": "帮我分析待处理工单的数量"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "ops_summary"
+    assert payload["model_source"] == "deterministic"
+    assert payload["data"]["summary"]["open_tickets"] == summary["open_tickets"]
+    assert "开放工单" in payload["reply"]
+    assert "企业客户工单" in payload["reply"]
+    assert any(event["event_type"] == "data_read" for event in payload["events"])
 
 
 def test_agent_chat_can_create_ticket(ticketflow_project):

@@ -1,5 +1,36 @@
 # TicketFlow Agent Platform
 
+## React Agent 工作台
+
+生产演示入口推荐使用 React/Vite 前端，而不是 Streamlit 聊天面板。React 工作台通过 FastAPI 调用 TicketFlow 平台能力，展示三栏式 Agent 操作界面：工单队列、可对话 Agent、工单详情、执行轨迹、审批队列、Outbox 和 Claw 评测中心。
+
+```bash
+scripts\start_ticketflow_web.bat
+```
+
+也可以拆开启动：
+
+```bash
+scripts\start_ticketflow_api.bat
+scripts\start_ticketflow_frontend.bat
+```
+
+默认地址：
+
+- API：`http://127.0.0.1:8000`
+- React 工作台：`http://127.0.0.1:5173`
+- 前端配置：`frontend/.env.example`
+
+如果本机已有 Docker 或其他服务占用 `8000`，可以临时切到 `8001`：
+
+```powershell
+$env:API_PORT="8001"
+$env:VITE_TICKETFLOW_API_BASE="http://127.0.0.1:8001"
+scripts\start_ticketflow_web.bat
+```
+
+对话 Agent 的默认行为是：先走确定性治理路由，覆盖身份说明、运营统计、查询工单、启动工作流、审批、Outbox、知识沉淀等高频意图；规则未命中时，才调用 DeepSeek 做只读自然语言解释。DeepSeek 不允许直接执行退款、审批、邮件投递等写操作，所有副作用仍然走审批、Outbox、Skill Runtime 和审计链路。
+
 TicketFlow 是一个面向客服与 IT 服务台场景的工单 Agent 平台。当前仓库保留稳定的 Streamlit 运维台，同时在 `production-claw-platform` 分支持续推进生产化：FastAPI 服务、Worker、任务状态、持久化审批、Outbox 幂等副作用和 Docker Compose 基础设施。
 
 ## 版本线
