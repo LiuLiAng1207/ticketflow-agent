@@ -138,3 +138,20 @@ def test_agent_chat_refuses_direct_high_risk_approval(ticketflow_project):
     assert payload["intent"] == "refuse_unsafe_action"
     assert payload["requires_confirmation"] is True
     assert "不会在聊天里直接批准" in payload["reply"]
+
+
+def test_agent_chat_can_batch_process_low_risk_tickets_in_chinese(ticketflow_project):
+    client = next(_client(ticketflow_project))
+    client.get("/readyz")
+
+    response = client.post("/api/v1/agent/chat", json={"message": "帮我批量处理10张工单"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "run_skill"
+    assert payload["model_source"] == "deterministic"
+    assert payload["data"]["skill_run"]["skill_id"] == "ticketflow-batch-ops"
+    assert payload["data"]["skill_run"]["status"] == "succeeded"
+    assert payload["data"]["skill_run"]["result"]["requested_count"] == 10
+    assert "批量" in payload["reply"]
+    assert any(event["event_type"] == "tool_call" for event in payload["events"])

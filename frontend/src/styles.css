@@ -184,6 +184,19 @@ button {
   border-radius: 22px;
 }
 
+.context-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.context-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), #74b58d, transparent);
+}
+
 .metric {
   padding: 14px;
   background: white;
@@ -202,6 +215,24 @@ button {
   color: var(--ink);
   font-size: 28px;
   letter-spacing: -0.05em;
+}
+
+.graph-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid #edf1f6;
+  border-radius: 18px;
+}
+
+.graph-stats .metric {
+  padding: 11px;
+}
+
+.graph-stats .metric strong {
+  font-size: 22px;
 }
 
 .search-box {
@@ -302,6 +333,7 @@ button {
 }
 
 .ghost-button,
+.full-button,
 .claw-row button,
 .composer button,
 .quick-prompts button {
@@ -315,6 +347,13 @@ button {
   border: 1px solid var(--line);
   background: white;
   color: var(--blue-deep);
+}
+
+.full-button {
+  width: 100%;
+  min-height: 42px;
+  background: var(--blue-deep);
+  color: white;
 }
 
 .quick-prompts {
@@ -430,6 +469,11 @@ button {
   line-height: 1.5;
 }
 
+.timeline-event.running > span {
+  background: var(--amber);
+  box-shadow: 0 0 0 5px rgba(179, 107, 0, 0.12);
+}
+
 .action-strip {
   margin-top: 12px;
 }
@@ -478,7 +522,8 @@ pre {
 }
 
 .composer button,
-.claw-row button {
+.claw-row button,
+.full-button {
   background: var(--blue-deep);
   color: white;
 }
@@ -488,6 +533,11 @@ pre {
 .claw-row button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.stack-gap {
+  display: grid;
+  gap: 10px;
 }
 
 .inspector {
@@ -528,7 +578,9 @@ pre {
 }
 
 .queue-row,
-.claw-row {
+.claw-row,
+.node-row,
+.audit-row {
   display: grid;
   gap: 4px;
   padding: 11px 0;
@@ -536,14 +588,71 @@ pre {
 }
 
 .queue-row strong,
-.claw-row strong {
+.claw-row strong,
+.node-row strong,
+.audit-row strong {
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .queue-row span,
-.claw-row span {
+.claw-row span,
+.node-row span,
+.audit-row span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.node-list,
+.edge-list,
+.audit-block {
+  display: grid;
+  gap: 2px;
+}
+
+.node-row {
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: start;
+}
+
+.node-row strong {
+  overflow: hidden;
+  color: var(--blue-deep);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge-list {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px dashed #cddceb;
+  border-radius: 16px;
+  background: #f8fbfe;
+}
+
+.edge-list span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subhead {
+  margin: 14px 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.audit-row strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .claw-row {

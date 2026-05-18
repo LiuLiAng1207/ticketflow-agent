@@ -311,13 +311,50 @@ class SkillRuntime:
             tickets = [self.repository.get_ticket(ticket_id).model_dump(mode="json") for ticket_id in ticket_ids]
             return {"tickets": tickets, "count": len(tickets)}, False, [{"event_type": "skill_batch_query"}]
         if operation == "batch_run_low_risk":
+            requested_count = max(1, min(int(input_payload.get("limit") or len(ticket_ids) or 10), 50))
+            selection = str(input_payload.get("selection") or "explicit_ticket_ids")
+            dispatch = bool(input_payload.get("dispatch", False))
+            if not ticket_ids:
+                selected: list[str] = []
+                for ticket in self.repository.list_open_tickets(limit=500):
+                    if ticket.expected_category in {"billing_refund", "technical_issue"} or ticket.customer_tier == "enterprise":
+                        continue
+                    selected.append(ticket.ticket_id)
+                    if len(selected) >= requested_count:
+                        break
+                ticket_ids = selected
             tasks: list[dict[str, object]] = []
+            skipped: list[str] = []
             for ticket_id in ticket_ids:
                 ticket = self.repository.get_ticket(ticket_id)
                 if ticket.expected_category in {"billing_refund", "technical_issue"} or ticket.customer_tier == "enterprise":
+                    skipped.append(ticket.ticket_id)
                     continue
-                tasks.append(self.repository.create_workflow_task(ticket_id=ticket.ticket_id, mode="async"))
-            return {"tasks": tasks, "count": len(tasks), "skipped_count": len(ticket_ids) - len(tasks)}, False, [{"event_type": "skill_batch_low_risk_started"}]
+                task = self.repository.create_workflow_task(ticket_id=ticket.ticket_id, mode="async")
+                if dispatch:
+                    from .worker import enqueue_run_ticket_workflow
+
+                    celery_task_id = enqueue_run_ticket_workflow(
+                        task_id=str(task["task_id"]),
+                        project_root=self.project_root,
+                        runner_overrides=self.runner_overrides,
+                    )
+                    current_task = self.repository.get_workflow_task(str(task["task_id"])) or task
+                    if current_task["status"] in {"queued", "running"}:
+                        current_task = self.repository.set_workflow_task_celery_id(str(task["task_id"]), celery_task_id)
+                    tasks.append(current_task)
+                else:
+                    tasks.append(task)
+            return {
+                "tasks": tasks,
+                "count": len(tasks),
+                "requested_count": requested_count,
+                "selection": selection,
+                "dispatch": dispatch,
+                "selected_ticket_ids": ticket_ids,
+                "skipped_ticket_ids": skipped,
+                "skipped_count": len(ticket_ids) - len(tasks),
+            }, False, [{"event_type": "skill_batch_low_risk_started"}]
         raise ValueError(f"Unsupported ticketflow-batch-ops operation: {operation}")
 
     def _run_claw_eval(self, input_payload: dict[str, Any]) -> tuple[dict[str, Any], bool, list[dict[str, Any]]]:

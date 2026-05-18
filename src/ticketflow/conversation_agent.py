@@ -34,6 +34,29 @@ def _contains_any(text: str, tokens: tuple[str, ...]) -> bool:
     return any(token.lower() in lowered for token in tokens)
 
 
+def _extract_count(message: str, default: int = 10, maximum: int = 50) -> int:
+    match = re.search(r"(\d+)\s*(?:张|条|个|件)?", message)
+    if match:
+        return max(1, min(int(match.group(1)), maximum))
+    chinese_numbers = {
+        "一": 1,
+        "二": 2,
+        "两": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+    }
+    for token, value in chinese_numbers.items():
+        if f"{token}张" in message or f"{token}条" in message or f"{token}个" in message:
+            return max(1, min(value, maximum))
+    return default
+
+
 def _extract_field(message: str, names: tuple[str, ...]) -> str | None:
     field_aliases = "|".join(re.escape(name) for name in names)
     next_fields = "|".join(
@@ -295,8 +318,11 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
             ],
         )
 
-    if "batch" in lowered and "low" in lowered and "risk" in lowered:
-        ticket_ids = re.findall(TICKET_ID_PATTERN, normalized)
+    if ("batch" in lowered and "low" in lowered and "risk" in lowered) or (
+        "批量" in normalized and _contains_any(normalized, ("处理", "运行", "启动", "执行", "跑"))
+    ):
+        requested_count = _extract_count(normalized)
+        ticket_ids = [item.upper() for item in re.findall(TICKET_ID_PATTERN, normalized)]
         result = SkillRuntime(
             context.repository,
             project_root=context.project_root,
@@ -304,17 +330,33 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
             knowledge_graph_store=context.knowledge_graph_store,
         ).run_skill(
             "ticketflow-batch-ops",
-            input_payload={"operation": "batch_run_low_risk", "ticket_ids": [item.upper() for item in ticket_ids]},
+            input_payload={
+                "operation": "batch_run_low_risk",
+                "ticket_ids": ticket_ids,
+                "limit": requested_count,
+                "selection": "auto_low_risk" if not ticket_ids else "explicit_ticket_ids",
+            },
             actor="conversation_agent",
         )
+        run_payload = result.model_dump(mode="json")
+        run_result = run_payload.get("result", {}) if isinstance(run_payload.get("result"), dict) else {}
         return _response(
             intent="run_skill",
-            reply="已通过 Skill Runtime 提交批量低风险工单处理；高风险工单会被跳过并保留原有治理链。",
-            data={"skill_run": result.model_dump(mode="json")},
+            reply=(
+                f"已通过 Skill Runtime 为 {run_result.get('count', 0)} 条低风险工单创建批量处理任务；"
+                f"本次请求目标为 {run_result.get('requested_count', requested_count)} 条。"
+                f"高风险或证据不足的工单会跳过，仍然保留证据充分性、审批和 Outbox 治理链。"
+            ),
+            data={"skill_run": run_payload},
             actions=[{"type": "run_skill", "skill_id": "ticketflow-batch-ops"}],
             events=[
-                _event("intent_detected", "识别批量处理意图"),
-                _event("tool_call", "调用批量 Skill", summary="只允许低风险动作进入批处理。"),
+                _event("intent_detected", "识别批量处理意图", payload={"requested_count": requested_count}),
+                _event(
+                    "tool_call",
+                    "调用批量 Skill",
+                    summary="只允许低风险动作进入批处理，高风险样本跳过。",
+                    payload=run_result,
+                ),
             ],
         )
 
