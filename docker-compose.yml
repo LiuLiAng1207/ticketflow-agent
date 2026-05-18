@@ -27,6 +27,11 @@ services:
       TICKETFLOW_MCP_ALLOWED_SCOPES: read,eval
       TICKETFLOW_MCP_ENABLE_WRITE_TOOLS: "false"
       TICKETFLOW_MCP_ACTOR: docker-mcp-client
+      OBSERVABILITY_ENABLED: "true"
+      LOG_FORMAT: json
+      TRACE_HEADER_NAME: X-Trace-Id
+      PROMETHEUS_ENABLED: "true"
+      LANGFUSE_ENABLED: "false"
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     ports:
@@ -61,6 +66,11 @@ services:
       SKILLS_DIR: skills
       ENABLE_SKILL_RUNTIME: "true"
       CLAW_TASKS_DIR: claw_tasks
+      OBSERVABILITY_ENABLED: "true"
+      LOG_FORMAT: json
+      TRACE_HEADER_NAME: X-Trace-Id
+      PROMETHEUS_ENABLED: "true"
+      LANGFUSE_ENABLED: "false"
       MINIO_ENDPOINT: http://minio:9000
       ENABLE_PRODUCTION_SERVICES: "true"
     volumes:
@@ -93,6 +103,11 @@ services:
       TICKETFLOW_MCP_ALLOWED_SCOPES: read,eval
       TICKETFLOW_MCP_ENABLE_WRITE_TOOLS: "false"
       TICKETFLOW_MCP_ACTOR: docker-mcp-client
+      OBSERVABILITY_ENABLED: "true"
+      LOG_FORMAT: json
+      TRACE_HEADER_NAME: X-Trace-Id
+      PROMETHEUS_ENABLED: "true"
+      LANGFUSE_ENABLED: "false"
       ENABLE_PRODUCTION_SERVICES: "true"
     volumes:
       - ticketflow-generated:/app/data/generated
@@ -101,6 +116,38 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: ["observability"]
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    depends_on:
+      api:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    profiles: ["observability"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ticketflow
+      GF_SECURITY_ADMIN_PASSWORD: ticketflow
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_started
 
   postgres:
     image: postgres:16-alpine
@@ -164,3 +211,5 @@ volumes:
   qdrant-data:
   neo4j-data:
   minio-data:
+  prometheus-data:
+  grafana-data:

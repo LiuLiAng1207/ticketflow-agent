@@ -184,6 +184,24 @@ class RepositoryProtocol(Protocol):
 
     def list_claw_leaderboard(self, limit: int = 100) -> list[dict[str, object]]: ...
 
+    def record_observability_event(
+        self,
+        *,
+        trace_id: str,
+        span_name: str,
+        component: str,
+        status: str,
+        latency_ms: int = 0,
+        error_type: str | None = None,
+        payload_summary: dict[str, object] | None = None,
+    ) -> dict[str, object]: ...
+
+    def list_observability_events(
+        self,
+        trace_id: str | None = None,
+        limit: int = 100,
+    ) -> list[dict[str, object]]: ...
+
 
 def create_repository(settings: ServiceSettings, *, sqlite_db_path: Path | None = None) -> RepositoryProtocol:
     if settings.database_backend == "postgres":

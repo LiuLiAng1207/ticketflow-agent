@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+import time
 from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 from .claw import ClawRegistry, ClawRuntime
@@ -15,6 +16,15 @@ from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
 from .models import ActionProposal, ApprovalDecision, ReviewDecision
+from .observability import (
+    classify_error,
+    observe_latency,
+    record_metric,
+    record_observability_event,
+    render_prometheus_metrics,
+    set_metric,
+    set_trace_id,
+)
 from .service_settings import ServiceSettings
 from .skills import SkillRegistry, SkillRuntime
 from .worker import enqueue_deliver_outbox_event, enqueue_pending_outbox_for_ticket, enqueue_run_claw_task, enqueue_run_ticket_workflow
@@ -159,6 +169,42 @@ def _ops_summary(runner: TicketFlowRunner) -> dict[str, int]:
     }
 
 
+def _status_counts(rows: list[dict[str, object]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for row in rows:
+        status = str(row.get("status") or "unknown")
+        counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def _record_component_observation(
+    request: Request,
+    *,
+    span_name: str,
+    component: str,
+    status: str = "ok",
+    latency_ms: int = 0,
+    error_type: str | None = None,
+    payload_summary: dict[str, object] | None = None,
+) -> None:
+    settings: ServiceSettings = request.app.state.service_settings
+    if not settings.observability_enabled:
+        return
+    try:
+        runner = _get_runner(request)
+        record_observability_event(
+            runner.repository,
+            span_name=span_name,
+            component=component,
+            status=status,
+            latency_ms=latency_ms,
+            error_type=error_type,
+            payload_summary=payload_summary or {},
+        )
+    except Exception:
+        return
+
+
 def create_app(
     project_root: str | Path | None = None,
     runner_overrides: dict[str, str] | None = None,
@@ -190,14 +236,125 @@ def create_app(
     app.state.runner = None
     app.state.kg_store = None
 
+    @app.middleware("http")
+    async def observability_middleware(request: Request, call_next):
+        settings: ServiceSettings = request.app.state.service_settings
+        trace_header = settings.trace_header_name or "X-Trace-Id"
+        trace_id = set_trace_id(request.headers.get(trace_header))
+        started = time.perf_counter()
+        response = None
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as exc:
+            latency_ms = int((time.perf_counter() - started) * 1000)
+            error_type = classify_error(exc, component="api")
+            record_metric("ticketflow_errors_total", 1, {"component": "api", "error_type": error_type})
+            if settings.observability_enabled:
+                try:
+                    runner = _get_runner(request)
+                    record_observability_event(
+                        runner.repository,
+                        trace_id=trace_id,
+                        span_name=f"{request.method} {request.url.path}",
+                        component="api",
+                        status="error",
+                        latency_ms=latency_ms,
+                        error_type=error_type,
+                        payload_summary={"path": request.url.path, "method": request.method, "error_message_summary": str(exc)},
+                    )
+                except Exception:
+                    pass
+            raise
+        finally:
+            latency = time.perf_counter() - started
+            status_code = getattr(response, "status_code", 500)
+            record_metric(
+                "ticketflow_api_requests_total",
+                1,
+                {"method": request.method, "path": request.url.path, "status": str(status_code)},
+            )
+            observe_latency(
+                "ticketflow_api_request_latency_seconds",
+                latency,
+                {"method": request.method, "path": request.url.path},
+            )
+            if response is not None:
+                response.headers[trace_header] = trace_id
+                if settings.observability_enabled:
+                    try:
+                        runner = _get_runner(request)
+                        record_observability_event(
+                            runner.repository,
+                            trace_id=trace_id,
+                            span_name=f"{request.method} {request.url.path}",
+                            component="api",
+                            status="ok" if status_code < 500 else "error",
+                            latency_ms=int(latency * 1000),
+                            error_type="api_error" if status_code >= 500 else None,
+                            payload_summary={"path": request.url.path, "method": request.method, "status_code": status_code},
+                        )
+                    except Exception:
+                        pass
+
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "service": "ticketflow-api"}
+
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics(request: Request) -> str:
+        if not service_settings.prometheus_enabled:
+            return "ticketflow_prometheus_enabled 0\n"
+        try:
+            runner = _get_runner(request)
+            set_metric(
+                "ticketflow_approvals_pending",
+                len(runner.repository.list_approval_requests(status="pending", limit=500)),
+            )
+            for status, count in _status_counts(runner.repository.list_outbox_events(limit=500)).items():
+                set_metric("ticketflow_outbox_events", count, {"status": status})
+        except Exception:
+            pass
+        return render_prometheus_metrics()
 
     @app.get("/readyz")
     def readyz(request: Request) -> dict[str, object]:
         runner = _get_runner(request)
         return service_settings.readiness_payload(sqlite_db_path=runner.settings.db_path)
+
+    @app.get("/api/v1/observability/summary")
+    def observability_summary(request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        events = runner.repository.list_observability_events(limit=1000)
+        errors_by_type: dict[str, int] = {}
+        events_by_component: dict[str, int] = {}
+        for event in events:
+            component = str(event.get("component") or "unknown")
+            events_by_component[component] = events_by_component.get(component, 0) + 1
+            if event.get("status") == "error":
+                error_type = str(event.get("error_type") or "unknown_error")
+                errors_by_type[error_type] = errors_by_type.get(error_type, 0) + 1
+        workflow_tasks = runner.repository.list_workflow_tasks(limit=500)
+        outbox_events = runner.repository.list_outbox_events(limit=500)
+        approvals = runner.repository.list_approval_requests(limit=500)
+        return {
+            "events_count": len(events),
+            "events_by_component": events_by_component,
+            "errors_by_type": errors_by_type,
+            "queues": {
+                "workflow_tasks": _status_counts(workflow_tasks),
+                "outbox": _status_counts(outbox_events),
+                "approvals": _status_counts(approvals),
+            },
+        }
+
+    @app.get("/api/v1/observability/traces/{trace_id}")
+    def observability_trace(trace_id: str, request: Request) -> dict[str, object]:
+        runner = _get_runner(request)
+        events = runner.repository.list_observability_events(trace_id=trace_id, limit=500)
+        if not events:
+            raise HTTPException(status_code=404, detail=f"Unknown trace_id: {trace_id}")
+        return {"trace_id": trace_id, "events": events, "count": len(events)}
 
     @app.get("/api/v1/tickets")
     def list_tickets(
@@ -364,6 +521,14 @@ def create_app(
             ticket_id=payload.ticket_id,
             idempotency_key=payload.idempotency_key,
         )
+        _record_component_observation(
+            request,
+            span_name="skill_run",
+            component="skill",
+            status="ok" if result.status != "failed" else "error",
+            error_type="tool_error" if result.status == "failed" else None,
+            payload_summary={"skill_id": skill_id, "run_id": result.run_id, "ticket_id": payload.ticket_id},
+        )
         return {"skill_run": result.model_dump(mode="json")}
 
     @app.get("/api/v1/claw/tasks")
@@ -401,6 +566,14 @@ def create_app(
         config = payload.config if payload is not None else {}
         if sync:
             result = _get_claw_runtime(request).run_task(task_id, actor=actor, pass_k=pass_k, config_payload=config)
+            average_score = float(result.summary.get("average_score", 0.0))
+            _record_component_observation(
+                request,
+                span_name="claw_run",
+                component="claw",
+                payload_summary={"task_id": task_id, "run_id": result.run_id, "average_score": average_score},
+            )
+            record_metric("ticketflow_claw_run_score", average_score, {"task_id": task_id})
             return {"run": result.model_dump(mode="json")}
         task = runner.repository.get_claw_task(task_id)
         selected_pass_k = int(pass_k or (task or {}).get("pass_k") or 3)
@@ -426,6 +599,12 @@ def create_app(
                 status="queued",
                 summary_payload={"celery_task_id": celery_task_id, "pass_k": selected_pass_k},
             )
+        _record_component_observation(
+            request,
+            span_name="claw_run_queued",
+            component="claw",
+            payload_summary={"task_id": task_id, "run_id": run["run_id"], "celery_task_id": celery_task_id},
+        )
         return JSONResponse(
             status_code=202,
             content=jsonable_encoder(
@@ -465,6 +644,17 @@ def create_app(
         _ticket_or_404(runner, ticket_id)
         graph = build_ticket_graph_from_repository(runner.repository, ticket_id, task_id=task_id)
         result = _get_kg_store(request).upsert_ticket_graph(graph)
+        _record_component_observation(
+            request,
+            span_name="kg_rebuild_ticket",
+            component="kg",
+            payload_summary={
+                "ticket_id": ticket_id,
+                "task_id": task_id,
+                "node_count": graph["node_count"],
+                "edge_count": graph["edge_count"],
+            },
+        )
         return {**result, "graph": {"node_count": graph["node_count"], "edge_count": graph["edge_count"]}}
 
     @app.get("/api/v1/kg/tickets/{ticket_id}")
@@ -505,6 +695,12 @@ def create_app(
             edited_action=payload.edited_action,
         )
         approval = runner.repository.get_approval_request(approval_id)
+        _record_component_observation(
+            request,
+            span_name="approval_decision",
+            component="approval",
+            payload_summary={"approval_id": approval_id, "decision": payload.decision, "reviewer": payload.reviewer},
+        )
         resume_result = None
         approval_payload = existing_approval.get("payload") if existing_approval else {}
         workflow_task_id = approval_payload.get("workflow_task_id") if isinstance(approval_payload, dict) else None
@@ -581,6 +777,17 @@ def create_app(
                 project_root=request.app.state.project_root,
                 runner_overrides=request.app.state.runner_overrides,
             )
+        _record_component_observation(
+            request,
+            span_name="create_outbox_event",
+            component="outbox",
+            payload_summary={
+                "event_id": event["event_id"],
+                "ticket_id": payload.ticket_id,
+                "operation_type": payload.operation_type,
+                "status": event["status"],
+            },
+        )
         return JSONResponse(
             status_code=201 if not event["deduplicated"] else 200,
             content=jsonable_encoder({"event": event, "celery_task_id": celery_task_id}),

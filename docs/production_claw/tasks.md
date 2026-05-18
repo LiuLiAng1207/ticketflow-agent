@@ -116,3 +116,12 @@
 - Keep write tools disabled by default through `TICKETFLOW_MCP_ENABLE_WRITE_TOOLS=false`.
 - Route all write tools through existing repository, Skill Runtime, Claw Runtime, approval, and Outbox paths; do not expose shell, raw SQL, or arbitrary Python execution.
 - Fix email MCP Chinese subject/body/tool descriptions so real inbox demos do not show mojibake.
+
+## Phase 12 Observability and Failure Diagnosis
+
+- Add request-level trace IDs to FastAPI and return them through `X-Trace-Id`.
+- Persist observability events with `trace_id`, component, span, status, latency, error type, and sanitized payload summary.
+- Expose `/metrics`, `/api/v1/observability/summary`, and `/api/v1/observability/traces/{trace_id}`.
+- Record component events for API, Worker, MCP, KG, Skill, Claw, Approval, and Outbox paths without changing business decisions.
+- Keep logs and trace payloads redacted; secrets, SMTP auth codes, API keys, and authorization tokens must never be written.
+- Add Prometheus and Grafana through the `observability` Compose profile so the default production loop remains light.

@@ -1,0 +1,62 @@
+{
+  "title": "TicketFlow Observability Overview",
+  "schemaVersion": 40,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "API Requests",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum(ticketflow_api_requests_total) by (path, status)",
+          "legendFormat": "{{path}} {{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker Tasks",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum(ticketflow_worker_tasks_total) by (task, status)",
+          "legendFormat": "{{task}} {{status}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Pending Approvals",
+      "gridPos": {"x": 0, "y": 8, "w": 6, "h": 6},
+      "targets": [
+        {
+          "expr": "ticketflow_approvals_pending"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "MCP Tool Calls",
+      "gridPos": {"x": 6, "y": 8, "w": 9, "h": 6},
+      "targets": [
+        {
+          "expr": "sum(ticketflow_mcp_tool_calls_total) by (tool, status)",
+          "legendFormat": "{{tool}} {{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Errors",
+      "gridPos": {"x": 15, "y": 8, "w": 9, "h": 6},
+      "targets": [
+        {
+          "expr": "sum(ticketflow_errors_total) by (component, error_type)",
+          "legendFormat": "{{component}} {{error_type}}"
+        }
+      ]
+    }
+  ]
+}

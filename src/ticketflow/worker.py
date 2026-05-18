@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +15,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised only in partially in
 
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
+from .observability import classify_error, observe_latency, record_metric, record_observability_event, set_trace_id
 from .service_settings import ServiceSettings
 from .skills import SkillRegistry, SkillRuntime
 from .claw import ClawRegistry, ClawRuntime
@@ -103,6 +105,9 @@ def run_ticket_workflow_now(
     project_root: str | Path,
     runner_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    trace_id = set_trace_id(f"trace-worker-{task_id}")
+    started = time.perf_counter()
     runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
     try:
         task = runner.repository.get_workflow_task(task_id)
@@ -118,21 +123,51 @@ def run_ticket_workflow_now(
             approval_id = None
             if result.interrupt_payload:
                 approval_id = result.interrupt_payload.get("approval_id")
-            return runner.repository.wait_workflow_task_for_approval(
+            waiting = runner.repository.wait_workflow_task_for_approval(
                 task_id,
                 thread_id=str(result.state["thread_id"]),
                 approval_id=str(approval_id) if approval_id else None,
             )
+            _record_worker_observation(
+                runner.repository,
+                settings=settings,
+                trace_id=trace_id,
+                span_name="run_ticket_workflow",
+                status="ok",
+                started=started,
+                payload={"task_id": task_id, "ticket_id": task["ticket_id"], "result_status": "waiting_approval"},
+            )
+            return waiting
         completed = runner.repository.complete_workflow_task(task_id, result=result.model_dump(mode="json"))
         enqueue_pending_outbox_for_ticket(
             ticket_id=str(task["ticket_id"]),
             project_root=project_root,
             runner_overrides=runner_overrides,
         )
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="run_ticket_workflow",
+            status="ok",
+            started=started,
+            payload={"task_id": task_id, "ticket_id": task["ticket_id"], "result_status": completed["status"]},
+        )
         return completed
     except Exception as exc:
         try:
-            return runner.repository.fail_workflow_task(task_id, error_message=str(exc))
+            failed = runner.repository.fail_workflow_task(task_id, error_message=str(exc))
+            _record_worker_observation(
+                runner.repository,
+                settings=settings,
+                trace_id=trace_id,
+                span_name="run_ticket_workflow",
+                status="error",
+                started=started,
+                error=exc,
+                payload={"task_id": task_id, "error_message_summary": str(exc)},
+            )
+            return failed
         except Exception:
             raise exc
     finally:
@@ -204,17 +239,42 @@ def build_knowledge_graph_now(
     runner_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    trace_id = set_trace_id(f"trace-kg-{ticket_id}")
+    started = time.perf_counter()
     runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
     store = create_knowledge_graph_store(settings)
     try:
         graph = build_ticket_graph_from_repository(runner.repository, ticket_id, task_id=task_id)
         result = store.upsert_ticket_graph(graph)
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="build_knowledge_graph",
+            component="kg",
+            status="ok",
+            started=started,
+            payload={"ticket_id": ticket_id, "task_id": task_id, "node_count": graph["node_count"], "edge_count": graph["edge_count"]},
+        )
         return {
             **result,
             "ticket_id": ticket_id,
             "task_id": task_id,
             "graph": {"node_count": graph["node_count"], "edge_count": graph["edge_count"]},
         }
+    except Exception as exc:
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="build_knowledge_graph",
+            component="kg",
+            status="error",
+            started=started,
+            error=exc,
+            payload={"ticket_id": ticket_id, "task_id": task_id, "error_message_summary": str(exc)},
+        )
+        raise
     finally:
         store.close()
         runner.close()
@@ -230,6 +290,8 @@ def run_claw_task_now(
     runner_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    trace_id = set_trace_id(f"trace-claw-{run_id or task_id}")
+    started = time.perf_counter()
     runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
     try:
         ClawRegistry(runner.repository, settings.claw_tasks_dir).reload()
@@ -239,7 +301,32 @@ def run_claw_task_now(
             project_root=project_root,
             runner_overrides=runner_overrides,
         ).run_task(task_id, actor=actor, pass_k=pass_k, run_id=run_id)
+        average_score = float(result.summary.get("average_score", 0.0))
+        record_metric("ticketflow_claw_run_score", average_score, {"task_id": task_id})
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="run_claw_task",
+            component="worker",
+            status="ok",
+            started=started,
+            payload={"task_id": task_id, "run_id": result.run_id, "average_score": average_score},
+        )
         return result.model_dump(mode="json")
+    except Exception as exc:
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="run_claw_task",
+            component="worker",
+            status="error",
+            started=started,
+            error=exc,
+            payload={"task_id": task_id, "run_id": run_id, "error_message_summary": str(exc)},
+        )
+        raise
     finally:
         runner.close()
 
@@ -302,6 +389,8 @@ def run_skill_now(
     runner_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    trace_id = set_trace_id(f"trace-skill-{skill_id}")
+    started = time.perf_counter()
     runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
     store = create_knowledge_graph_store(settings)
     try:
@@ -318,7 +407,31 @@ def run_skill_now(
             ticket_id=ticket_id,
             idempotency_key=idempotency_key,
         )
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="run_skill",
+            component="worker",
+            status="ok" if result.status != "failed" else "error",
+            started=started,
+            error=RuntimeError(result.error_message) if result.error_message else None,
+            payload={"skill_id": skill_id, "run_id": result.run_id, "ticket_id": ticket_id},
+        )
         return result.model_dump(mode="json")
+    except Exception as exc:
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="run_skill",
+            component="worker",
+            status="error",
+            started=started,
+            error=exc,
+            payload={"skill_id": skill_id, "ticket_id": ticket_id, "error_message_summary": str(exc)},
+        )
+        raise
     finally:
         store.close()
         runner.close()
@@ -351,12 +464,25 @@ def deliver_outbox_event_now(
     project_root: str | Path,
     runner_overrides: dict[str, str] | None = None,
 ) -> dict[str, Any]:
+    settings = ServiceSettings.from_project_root(project_root, overrides=runner_overrides)
+    trace_id = set_trace_id(f"trace-outbox-{event_id}")
+    started = time.perf_counter()
     runner = TicketFlowRunner.from_project_root(project_root, overrides=runner_overrides)
     try:
         event = runner.repository.get_outbox_event(event_id)
         if event is None:
             raise KeyError(f"Unknown event_id: {event_id}")
         if event["status"] == "delivered":
+            _record_worker_observation(
+                runner.repository,
+                settings=settings,
+                trace_id=trace_id,
+                span_name="deliver_outbox_event",
+                component="outbox",
+                status="ok",
+                started=started,
+                payload={"event_id": event_id, "result_status": "already_delivered"},
+            )
             return event
 
         lock = runner.repository.acquire_external_operation_lock(
@@ -366,6 +492,16 @@ def deliver_outbox_event_now(
             acquired_by="ticketflow-worker",
         )
         if not lock["acquired"]:
+            _record_worker_observation(
+                runner.repository,
+                settings=settings,
+                trace_id=trace_id,
+                span_name="deliver_outbox_event",
+                component="outbox",
+                status="ok",
+                started=started,
+                payload={"event_id": event_id, "result_status": "locked"},
+            )
             return event
 
         payload = event["payload"] if isinstance(event["payload"], dict) else {}
@@ -398,14 +534,72 @@ def deliver_outbox_event_now(
             if payload.get("target_status"):
                 runner.tools.update_ticket_status(str(event["ticket_id"]), str(payload["target_status"]))
 
-        return runner.repository.mark_outbox_event_delivered(event_id)
+        delivered = runner.repository.mark_outbox_event_delivered(event_id)
+        _record_worker_observation(
+            runner.repository,
+            settings=settings,
+            trace_id=trace_id,
+            span_name="deliver_outbox_event",
+            component="outbox",
+            status="ok",
+            started=started,
+            payload={"event_id": event_id, "operation_type": operation_type, "result_status": delivered["status"]},
+        )
+        return delivered
     except Exception as exc:
         try:
-            return runner.repository.mark_outbox_event_failed(event_id, str(exc))
+            failed = runner.repository.mark_outbox_event_failed(event_id, str(exc))
+            _record_worker_observation(
+                runner.repository,
+                settings=settings,
+                trace_id=trace_id,
+                span_name="deliver_outbox_event",
+                component="outbox",
+                status="error",
+                started=started,
+                error=exc,
+                payload={"event_id": event_id, "error_message_summary": str(exc)},
+            )
+            return failed
         except Exception:
             raise exc
     finally:
         runner.close()
+
+
+def _record_worker_observation(
+    repository,
+    *,
+    settings: ServiceSettings,
+    trace_id: str,
+    span_name: str,
+    status: str,
+    started: float,
+    payload: dict[str, Any],
+    component: str = "worker",
+    error: BaseException | None = None,
+) -> None:
+    latency_seconds = max(0.0, time.perf_counter() - started)
+    record_metric("ticketflow_worker_tasks_total", 1, {"task": span_name, "status": status})
+    observe_latency("ticketflow_worker_task_latency_seconds", latency_seconds, {"task": span_name})
+    if component == "outbox":
+        record_metric("ticketflow_outbox_deliveries_total", 1, {"status": status})
+    if status == "error":
+        error_type = classify_error(error, component=component)
+        record_metric("ticketflow_errors_total", 1, {"component": component, "error_type": error_type})
+    else:
+        error_type = None
+    if settings.observability_enabled:
+        record_observability_event(
+            repository,
+            trace_id=trace_id,
+            span_name=span_name,
+            component=component,
+            status=status,
+            latency_ms=int(latency_seconds * 1000),
+            error_type=error_type,
+            payload_summary=payload,
+        )
 
 
 @celery_app.task(name="ticketflow.deliver_outbox_event")

@@ -33,3 +33,4 @@
 - Focused Phase 9 verification passed: `43 passed`, `1 skipped` across API, worker, PostgreSQL contract, Agent, Skill Runtime, and ops-console tests.
 - Phase 10 Production Claw Harness started: added task manifest loading, repository-backed run/attempt/trajectory/score persistence, deterministic verifier scoring, five built-in benchmark tasks, Claw API, worker `run_claw_task`, Skill Runtime bridge, and ops-console visibility.
 - Phase 11 Platform MCP started: added a governed MCP surface for tickets, workflow tasks, approvals, Outbox, KG, Skill Runtime, Claw, conversational Agent operations, read-only resources, reusable prompts, and fixed SMTP email MCP Chinese text.
+- Phase 12 Observability started: added trace IDs, API middleware, repository-backed observability events, Worker/MCP component events, Prometheus metrics, and optional Prometheus/Grafana Compose profile.

@@ -341,6 +341,18 @@ CREATE TABLE IF NOT EXISTS claw_scores (
     failure_reasons JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS observability_events (
+    event_id TEXT PRIMARY KEY,
+    trace_id TEXT NOT NULL,
+    span_name TEXT NOT NULL,
+    component TEXT NOT NULL,
+    status TEXT NOT NULL,
+    latency_ms INTEGER NOT NULL DEFAULT 0,
+    error_type TEXT,
+    payload_summary JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL
+);
 """
 
 
@@ -448,6 +460,7 @@ class PostgresTicketFlowRepository:
             "refund_requests",
             "audit_log",
             "external_email_deliveries",
+            "observability_events",
             "workflow_tasks",
             "outbox_events",
             "idempotency_keys",
@@ -856,6 +869,64 @@ class PostgresTicketFlowRepository:
             }
             for row in rows
         ]
+
+    @staticmethod
+    def _observability_event_from_row(row: dict[str, object]) -> dict[str, object]:
+        return {
+            **_wire_row(row),
+            "payload_summary": _json_load(row.get("payload_summary")),
+        }
+
+    def record_observability_event(
+        self,
+        *,
+        trace_id: str,
+        span_name: str,
+        component: str,
+        status: str,
+        latency_ms: int = 0,
+        error_type: str | None = None,
+        payload_summary: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        event_id = f"obs-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                INSERT INTO observability_events
+                (event_id, trace_id, span_name, component, status, latency_ms, error_type, payload_summary, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s)
+                RETURNING *
+                """,
+                (
+                    event_id,
+                    trace_id,
+                    span_name,
+                    component,
+                    status,
+                    int(latency_ms),
+                    error_type,
+                    _json_dump(payload_summary or {}),
+                    now,
+                ),
+            ).fetchone()
+            conn.commit()
+        assert row is not None
+        return self._observability_event_from_row(dict(row))
+
+    def list_observability_events(self, trace_id: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if trace_id is None:
+                rows = conn.execute(
+                    "SELECT * FROM observability_events ORDER BY created_at DESC LIMIT %s",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM observability_events WHERE trace_id = %s ORDER BY created_at ASC LIMIT %s",
+                    (trace_id, limit),
+                ).fetchall()
+        return [self._observability_event_from_row(dict(row)) for row in rows]
 
     @staticmethod
     def _workflow_task_from_row(row: dict[str, object]) -> dict[str, object]:

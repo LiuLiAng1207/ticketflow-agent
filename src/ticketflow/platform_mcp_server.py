@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass
+from functools import wraps
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 from mcp.server.fastmcp import FastMCP
 
@@ -12,6 +14,7 @@ from .claw import ClawRegistry, ClawRuntime
 from .conversation_agent import AgentChatContext, handle_agent_chat
 from .graph import TicketFlowRunner
 from .knowledge_graph import build_ticket_graph_from_repository, create_knowledge_graph_store
+from .observability import classify_error, record_metric, record_observability_event, set_trace_id
 from .service_settings import ServiceSettings
 from .skills import SkillRegistry, SkillRuntime
 
@@ -19,6 +22,7 @@ from .skills import SkillRegistry, SkillRuntime
 READ_SCOPE = "read"
 EVAL_SCOPE = "eval"
 WRITE_SCOPE = "write"
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
@@ -120,7 +124,56 @@ def create_mcp() -> FastMCP:
         port=int(os.getenv("TICKETFLOW_MCP_PORT", "8000")),
     )
 
+    def _observe_tool(tool_name: str) -> Callable[[F], F]:
+        def decorator(func: F) -> F:
+            @wraps(func)
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
+                trace_id = set_trace_id(f"trace-mcp-{tool_name.replace('.', '-')}")
+                started = time.perf_counter()
+                rt = _runtime()
+                try:
+                    result = func(*args, **kwargs)
+                except Exception as exc:
+                    latency_ms = int((time.perf_counter() - started) * 1000)
+                    error_type = classify_error(exc, component="mcp")
+                    record_metric("ticketflow_mcp_tool_calls_total", 1, {"tool": tool_name, "status": "error"})
+                    record_metric("ticketflow_errors_total", 1, {"component": "mcp", "error_type": error_type})
+                    if rt.settings.observability_enabled:
+                        record_observability_event(
+                            rt.runner.repository,
+                            trace_id=trace_id,
+                            span_name=tool_name,
+                            component="mcp",
+                            status="error",
+                            latency_ms=latency_ms,
+                            error_type=error_type,
+                            payload_summary={
+                                "tool_name": tool_name,
+                                "actor": rt.actor,
+                                "error_message_summary": str(exc),
+                            },
+                        )
+                    raise
+                latency_ms = int((time.perf_counter() - started) * 1000)
+                record_metric("ticketflow_mcp_tool_calls_total", 1, {"tool": tool_name, "status": "ok"})
+                if rt.settings.observability_enabled:
+                    record_observability_event(
+                        rt.runner.repository,
+                        trace_id=trace_id,
+                        span_name=tool_name,
+                        component="mcp",
+                        status="ok",
+                        latency_ms=latency_ms,
+                        payload_summary={"tool_name": tool_name, "actor": rt.actor},
+                    )
+                return result
+
+            return wrapper  # type: ignore[return-value]
+
+        return decorator
+
     @mcp.tool(name="ticketflow.ops.summary", description="查询 TicketFlow 运营概览。", structured_output=True)
+    @_observe_tool("ticketflow.ops.summary")
     def ops_summary() -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -142,6 +195,7 @@ def create_mcp() -> FastMCP:
         }
 
     @mcp.tool(name="ticketflow.tickets.list", description="查询开放工单列表。", structured_output=True)
+    @_observe_tool("ticketflow.tickets.list")
     def tickets_list(limit: int = 50) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -150,6 +204,7 @@ def create_mcp() -> FastMCP:
         return {"tickets": tickets, "count": len(tickets)}
 
     @mcp.tool(name="ticketflow.tickets.get", description="查询单个工单详情。", structured_output=True)
+    @_observe_tool("ticketflow.tickets.get")
     def tickets_get(ticket_id: str) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -157,6 +212,7 @@ def create_mcp() -> FastMCP:
         return {"ticket": _model_payload(ticket)}
 
     @mcp.tool(name="ticketflow.tickets.audit", description="查询单个工单审计日志。", structured_output=True)
+    @_observe_tool("ticketflow.tickets.audit")
     def tickets_audit(ticket_id: str) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -165,6 +221,7 @@ def create_mcp() -> FastMCP:
         return {"ticket_id": ticket_id, "events": events, "count": len(events)}
 
     @mcp.tool(name="ticketflow.workflow.run", description="提交工单工作流任务。", structured_output=True)
+    @_observe_tool("ticketflow.workflow.run")
     def workflow_run(ticket_id: str) -> dict[str, Any]:
         rt = _runtime()
         rt.require_write_enabled("ticketflow.workflow.run")
@@ -177,6 +234,7 @@ def create_mcp() -> FastMCP:
         }
 
     @mcp.tool(name="ticketflow.approvals.list", description="查询审批队列。", structured_output=True)
+    @_observe_tool("ticketflow.approvals.list")
     def approvals_list(status: str | None = None, limit: int = 100) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -184,6 +242,7 @@ def create_mcp() -> FastMCP:
         return {"approvals": approvals, "count": len(approvals)}
 
     @mcp.tool(name="ticketflow.approvals.decide", description="提交人工审批决定。", structured_output=True)
+    @_observe_tool("ticketflow.approvals.decide")
     def approvals_decide(
         approval_id: str,
         decision: str,
@@ -213,6 +272,7 @@ def create_mcp() -> FastMCP:
         }
 
     @mcp.tool(name="ticketflow.outbox.list", description="查询 Outbox 投递队列。", structured_output=True)
+    @_observe_tool("ticketflow.outbox.list")
     def outbox_list(status: str | None = None, limit: int = 100) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -220,6 +280,7 @@ def create_mcp() -> FastMCP:
         return {"events": events, "count": len(events)}
 
     @mcp.tool(name="ticketflow.kg.explain_ticket", description="解释工单证据链和处理路径。", structured_output=True)
+    @_observe_tool("ticketflow.kg.explain_ticket")
     def kg_explain_ticket(ticket_id: str) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -232,6 +293,7 @@ def create_mcp() -> FastMCP:
         }
 
     @mcp.tool(name="ticketflow.kg.search", description="搜索知识图谱节点。", structured_output=True)
+    @_observe_tool("ticketflow.kg.search")
     def kg_search(query: str, limit: int = 20) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -254,6 +316,7 @@ def create_mcp() -> FastMCP:
                 close()
 
     @mcp.tool(name="ticketflow.skills.list", description="查询已注册 Skill。", structured_output=True)
+    @_observe_tool("ticketflow.skills.list")
     def skills_list(limit: int = 100) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(READ_SCOPE)
@@ -262,6 +325,7 @@ def create_mcp() -> FastMCP:
         return {"skills": skills, "count": len(skills)}
 
     @mcp.tool(name="ticketflow.skills.run", description="运行受控 Skill。", structured_output=True)
+    @_observe_tool("ticketflow.skills.run")
     def skills_run(
         skill_id: str,
         input_payload: dict[str, Any] | None = None,
@@ -280,6 +344,7 @@ def create_mcp() -> FastMCP:
         return {"skill_run": result.model_dump(mode="json")}
 
     @mcp.tool(name="ticketflow.claw.tasks.list", description="查询 Claw 评测任务列表。", structured_output=True)
+    @_observe_tool("ticketflow.claw.tasks.list")
     def claw_tasks_list(limit: int = 100) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(EVAL_SCOPE)
@@ -288,6 +353,7 @@ def create_mcp() -> FastMCP:
         return {"tasks": tasks, "count": len(tasks)}
 
     @mcp.tool(name="ticketflow.claw.run", description="运行 Claw 评测任务。", structured_output=True)
+    @_observe_tool("ticketflow.claw.run")
     def claw_run(task_id: str, pass_k: int = 3) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(EVAL_SCOPE)
@@ -295,6 +361,7 @@ def create_mcp() -> FastMCP:
         return {"run": result.model_dump(mode="json")}
 
     @mcp.tool(name="ticketflow.claw.runs.get", description="查询 Claw 运行详情。", structured_output=True)
+    @_observe_tool("ticketflow.claw.runs.get")
     def claw_runs_get(run_id: str) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(EVAL_SCOPE)
@@ -304,6 +371,7 @@ def create_mcp() -> FastMCP:
         return {"run": run}
 
     @mcp.tool(name="ticketflow.claw.leaderboard", description="查询 Claw Leaderboard。", structured_output=True)
+    @_observe_tool("ticketflow.claw.leaderboard")
     def claw_leaderboard(limit: int = 100) -> dict[str, Any]:
         rt = _runtime()
         rt.require_scope(EVAL_SCOPE)
@@ -311,6 +379,7 @@ def create_mcp() -> FastMCP:
         return {"leaderboard": rows, "count": len(rows)}
 
     @mcp.tool(name="ticketflow.agent.chat", description="调用对话式工单 Agent。", structured_output=True)
+    @_observe_tool("ticketflow.agent.chat")
     def agent_chat(message: str, session_id: str | None = None) -> dict[str, Any]:
         rt = _runtime()
         rt.require_write_enabled("ticketflow.agent.chat")

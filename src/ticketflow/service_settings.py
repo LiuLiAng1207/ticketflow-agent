@@ -46,6 +46,14 @@ class ServiceSettings:
     ticketflow_mcp_allowed_scopes: str = "read,eval"
     ticketflow_mcp_enable_write_tools: bool = False
     ticketflow_mcp_actor: str = "mcp-client"
+    observability_enabled: bool = True
+    log_format: str = "json"
+    trace_header_name: str = "X-Trace-Id"
+    prometheus_enabled: bool = True
+    langfuse_enabled: bool = False
+    langfuse_host: str | None = None
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
     neo4j_user: str | None = "neo4j"
     neo4j_password: str | None = None
     kg_backend: str = "disabled"
@@ -107,6 +115,14 @@ class ServiceSettings:
             ),
             ticketflow_mcp_enable_write_tools=_get_bool("TICKETFLOW_MCP_ENABLE_WRITE_TOOLS", False, overrides),
             ticketflow_mcp_actor=_get_env("TICKETFLOW_MCP_ACTOR", overrides, "mcp-client") or "mcp-client",
+            observability_enabled=_get_bool("OBSERVABILITY_ENABLED", True, overrides),
+            log_format=(_get_env("LOG_FORMAT", overrides, "json") or "json").strip().lower(),
+            trace_header_name=_get_env("TRACE_HEADER_NAME", overrides, "X-Trace-Id") or "X-Trace-Id",
+            prometheus_enabled=_get_bool("PROMETHEUS_ENABLED", True, overrides),
+            langfuse_enabled=_get_bool("LANGFUSE_ENABLED", False, overrides),
+            langfuse_host=_get_env("LANGFUSE_HOST", overrides),
+            langfuse_public_key=_get_env("LANGFUSE_PUBLIC_KEY", overrides),
+            langfuse_secret_key=_get_env("LANGFUSE_SECRET_KEY", overrides),
         )
 
     def readiness_payload(self, *, sqlite_db_path: Path | None = None) -> dict[str, object]:
@@ -153,6 +169,14 @@ class ServiceSettings:
                     "allowed_scopes": self.ticketflow_mcp_allowed_scopes,
                     "write_tools_enabled": self.ticketflow_mcp_enable_write_tools,
                     "actor": self.ticketflow_mcp_actor,
+                },
+                "observability": {
+                    "enabled": self.observability_enabled,
+                    "log_format": self.log_format,
+                    "trace_header_name": self.trace_header_name,
+                    "prometheus_enabled": self.prometheus_enabled,
+                    "langfuse_enabled": self.langfuse_enabled,
+                    "langfuse_host": self.langfuse_host,
                 },
             },
         }

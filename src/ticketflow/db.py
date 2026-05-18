@@ -359,6 +359,18 @@ CREATE TABLE IF NOT EXISTS claw_scores (
     failure_reasons TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS observability_events (
+    event_id TEXT PRIMARY KEY,
+    trace_id TEXT NOT NULL,
+    span_name TEXT NOT NULL,
+    component TEXT NOT NULL,
+    status TEXT NOT NULL,
+    latency_ms INTEGER NOT NULL DEFAULT 0,
+    error_type TEXT,
+    payload_summary TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL
+);
 """
 
 
@@ -473,6 +485,7 @@ class TicketFlowRepository:
             conn.execute("DELETE FROM refund_requests")
             conn.execute("DELETE FROM audit_log")
             conn.execute("DELETE FROM external_email_deliveries")
+            conn.execute("DELETE FROM observability_events")
             conn.execute("DELETE FROM skill_runs")
             conn.commit()
 
@@ -856,6 +869,75 @@ class TicketFlowRepository:
                 }
             )
         return events
+
+    @staticmethod
+    def _observability_event_from_row(row: sqlite3.Row) -> dict[str, object]:
+        payload_raw = row["payload_summary"]
+        try:
+            payload_summary = json.loads(payload_raw) if payload_raw else {}
+        except json.JSONDecodeError:
+            payload_summary = {"raw": payload_raw}
+        return {
+            "event_id": row["event_id"],
+            "trace_id": row["trace_id"],
+            "span_name": row["span_name"],
+            "component": row["component"],
+            "status": row["status"],
+            "latency_ms": row["latency_ms"],
+            "error_type": row["error_type"],
+            "payload_summary": payload_summary,
+            "created_at": row["created_at"],
+        }
+
+    def record_observability_event(
+        self,
+        *,
+        trace_id: str,
+        span_name: str,
+        component: str,
+        status: str,
+        latency_ms: int = 0,
+        error_type: str | None = None,
+        payload_summary: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        event_id = f"obs-{uuid4().hex}"
+        now = _utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO observability_events
+                (event_id, trace_id, span_name, component, status, latency_ms, error_type, payload_summary, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event_id,
+                    trace_id,
+                    span_name,
+                    component,
+                    status,
+                    int(latency_ms),
+                    error_type,
+                    json.dumps(payload_summary or {}, ensure_ascii=False),
+                    now,
+                ),
+            )
+            conn.commit()
+        rows = self.list_observability_events(trace_id=trace_id, limit=1)
+        return rows[0] if rows else {"event_id": event_id, "trace_id": trace_id}
+
+    def list_observability_events(self, trace_id: str | None = None, limit: int = 100) -> list[dict[str, object]]:
+        with self.connect() as conn:
+            if trace_id is None:
+                rows = conn.execute(
+                    "SELECT * FROM observability_events ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM observability_events WHERE trace_id = ? ORDER BY created_at ASC LIMIT ?",
+                    (trace_id, limit),
+                ).fetchall()
+        return [self._observability_event_from_row(row) for row in rows]
 
     @staticmethod
     def _workflow_task_from_row(row: sqlite3.Row) -> dict[str, object]:

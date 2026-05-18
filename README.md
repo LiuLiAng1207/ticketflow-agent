@@ -132,6 +132,27 @@ Core MCP prompts:
 - `kb_candidate_from_ticket(ticket_id)`
 - `claw_failure_analysis(run_id)`
 
+## Observability
+
+Phase 12 adds production-style observability for API, Worker, MCP, Skill, KG, Claw, Approval, and Outbox paths.
+
+```bash
+curl -i http://127.0.0.1:8000/healthz
+curl http://127.0.0.1:8000/metrics
+curl http://127.0.0.1:8000/api/v1/observability/summary
+curl http://127.0.0.1:8000/api/v1/observability/traces/<trace_id>
+```
+
+Every API response includes `X-Trace-Id`. Operators can use that ID to retrieve sanitized observability events and identify whether a failure came from API, Worker, RAG/LLM/tool execution, approval, Outbox delivery, MCP, Skill, KG, or Claw evaluation.
+
+Optional local observability stack:
+
+```bash
+docker compose --profile observability up prometheus grafana
+```
+
+Prometheus scrapes `api:8000/metrics`. Grafana is available at `http://localhost:3000` with local credentials `ticketflow / ticketflow`. Langfuse is configuration-only in this phase and remains disabled unless `LANGFUSE_ENABLED=true` is set.
+
 ## Docker Compose
 
 ```bash

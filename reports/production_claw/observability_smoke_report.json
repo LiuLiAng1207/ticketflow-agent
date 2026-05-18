@@ -1,0 +1,58 @@
+{
+  "phase": "phase_12_observability",
+  "generated_at": "2026-05-18T09:05:00+08:00",
+  "branch": "production-claw-platform",
+  "checks": {
+    "pytest": {
+      "command": "python -m pytest -q --durations=8",
+      "status": "passed",
+      "summary": "144 passed, 1 skipped"
+    },
+    "compose_config": {
+      "command": "docker compose config --quiet",
+      "status": "passed"
+    },
+    "compose_observability_config": {
+      "command": "docker compose --profile observability config --quiet",
+      "status": "passed"
+    },
+    "api_container_smoke": {
+      "services": ["api", "worker", "mcp"],
+      "status": "passed",
+      "verified_endpoints": [
+        "GET /healthz",
+        "GET /readyz",
+        "GET /metrics",
+        "GET /api/v1/observability/summary",
+        "GET /api/v1/observability/traces/{trace_id}"
+      ]
+    },
+    "observability_stack_smoke": {
+      "services": ["prometheus", "grafana"],
+      "status": "passed",
+      "verified_endpoints": [
+        "GET http://127.0.0.1:9090/-/ready",
+        "GET http://127.0.0.1:3000/api/health"
+      ]
+    }
+  },
+  "sample_trace_ids": [
+    "trace-smoke-health",
+    "trace-smoke-ready",
+    "trace-smoke-summary"
+  ],
+  "core_metrics": [
+    "ticketflow_api_requests_total",
+    "ticketflow_api_request_latency_seconds",
+    "ticketflow_worker_tasks_total",
+    "ticketflow_outbox_deliveries_total",
+    "ticketflow_approvals_pending",
+    "ticketflow_claw_run_score",
+    "ticketflow_mcp_tool_calls_total",
+    "ticketflow_errors_total"
+  ],
+  "notes": [
+    "Langfuse remains optional and disabled by default.",
+    "Logs and trace payloads are sanitized before persistence."
+  ]
+}

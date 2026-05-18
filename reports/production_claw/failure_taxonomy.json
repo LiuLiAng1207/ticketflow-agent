@@ -1,0 +1,46 @@
+{
+  "phase": "phase_12_observability",
+  "generated_at": "2026-05-18T09:05:00+08:00",
+  "taxonomy": {
+    "api_error": {
+      "description": "FastAPI request handling, routing, validation, or response serialization failure.",
+      "primary_sources": ["api_middleware", "api_endpoint"],
+      "typical_next_step": "Inspect trace_id in /api/v1/observability/traces/{trace_id} and endpoint logs."
+    },
+    "worker_error": {
+      "description": "Celery task execution, retry, cancellation, or task state persistence failure.",
+      "primary_sources": ["run_ticket_workflow", "run_claw_task", "run_skill"],
+      "typical_next_step": "Check workflow task status, worker logs, and task payload summary."
+    },
+    "rag_error": {
+      "description": "Retrieval, reranking, evidence assembly, or grounding context failure.",
+      "primary_sources": ["retrieve_context", "assess_sufficiency"],
+      "typical_next_step": "Inspect retrieved evidence ids, source_type coverage, and sufficiency reasoning."
+    },
+    "llm_error": {
+      "description": "Cloud or local model call failure, structured output parse failure, or generation timeout.",
+      "primary_sources": ["triage", "propose_action", "draft_reply", "fact_check_reply"],
+      "typical_next_step": "Inspect model backend, prompt stage, structured parse status, and fallback path."
+    },
+    "tool_error": {
+      "description": "Internal tool execution or tool argument validation failure.",
+      "primary_sources": ["execute_action", "skill_runtime"],
+      "typical_next_step": "Check tool_name, sanitized tool_args, approval status, and idempotency key."
+    },
+    "approval_error": {
+      "description": "Durable HITL request, decision, resume, or approval policy failure.",
+      "primary_sources": ["approval_gate", "approval_api"],
+      "typical_next_step": "Inspect approval request payload snapshot and decision audit event."
+    },
+    "outbox_error": {
+      "description": "External side-effect delivery failure such as email, refund request, or escalation dispatch.",
+      "primary_sources": ["outbox_worker", "mcp_email_client"],
+      "typical_next_step": "Check outbox status, delivery attempts, idempotency key, and external service response."
+    },
+    "mcp_error": {
+      "description": "MCP tool/resource/prompt execution failure or permission denial.",
+      "primary_sources": ["platform_mcp_server", "email_mcp_server"],
+      "typical_next_step": "Check MCP actor, allowed scopes, write-tool flag, and sanitized tool input."
+    }
+  }
+}
