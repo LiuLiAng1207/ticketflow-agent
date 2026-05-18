@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import os
 from pathlib import Path
@@ -630,6 +631,8 @@ def _zh_text(value: Any) -> str:
         text = text.replace(raw, label)
     for raw, label in ROUTE_FAMILY_LABELS.items():
         text = text.replace(raw, label)
+    for raw, label in TIER_LABELS.items():
+        text = text.replace(raw, label)
     for raw, label in TOOL_LABELS.items():
         text = text.replace(raw, label)
     for raw, label in EXECUTION_STATUS_LABELS.items():
@@ -1012,6 +1015,119 @@ def _inject_styles() -> None:
             border-left: 3px solid #2f7da8;
             padding-left: 0.55rem;
             margin: 0.45rem 0 0.25rem;
+        }
+
+        .tf-agent-console {
+            background:
+                radial-gradient(circle at 18% -10%, rgba(46, 125, 168, 0.18), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f4f9fd 100%);
+            border: 1px solid #bed3e4;
+            border-radius: 26px;
+            padding: 1.05rem 1.15rem;
+            margin: 1rem 0 1.1rem;
+            box-shadow: 0 20px 48px rgba(23, 48, 72, 0.12);
+        }
+
+        .tf-agent-console-title {
+            color: #10263e;
+            font-size: 1.22rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.15rem;
+        }
+
+        .tf-agent-console-subtitle {
+            color: #607387;
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .tf-agent-section-title {
+            color: #17324d;
+            font-weight: 850;
+            font-size: 0.92rem;
+            margin: 0.45rem 0 0.55rem;
+        }
+
+        .tf-chat-stream {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid #d5e3ef;
+            border-radius: 20px;
+            padding: 0.85rem;
+            min-height: 210px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .tf-chat-row {
+            display: flex;
+            margin: 0.55rem 0;
+        }
+
+        .tf-chat-row-user {
+            justify-content: flex-end;
+        }
+
+        .tf-chat-row-assistant {
+            justify-content: flex-start;
+        }
+
+        .tf-chat-bubble {
+            max-width: 86%;
+            border-radius: 18px;
+            padding: 0.7rem 0.82rem;
+            line-height: 1.62;
+            font-size: 0.93rem;
+            box-shadow: 0 10px 24px rgba(15, 35, 55, 0.08);
+        }
+
+        .tf-chat-bubble-user {
+            background: linear-gradient(135deg, #275f97 0%, #1d4d7e 100%);
+            color: #ffffff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .tf-chat-bubble-assistant {
+            background: #ffffff;
+            color: #17283b;
+            border: 1px solid #d6e4ef;
+            border-bottom-left-radius: 6px;
+        }
+
+        .tf-chat-role {
+            font-size: 0.72rem;
+            font-weight: 850;
+            letter-spacing: 0.06em;
+            opacity: 0.68;
+            margin-bottom: 0.24rem;
+        }
+
+        .tf-chat-meta {
+            margin-top: 0.42rem;
+            color: #5c7288;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .tf-agent-latest {
+            background: linear-gradient(135deg, #e8f4ff 0%, #ffffff 100%);
+            border: 1px solid #b8d6ef;
+            border-radius: 18px;
+            padding: 0.82rem 0.9rem;
+            color: #193149;
+            line-height: 1.58;
+            box-shadow: inset 4px 0 0 #2f7da8;
+            margin-bottom: 0.75rem;
+        }
+
+        .tf-agent-context {
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid #d5e3ef;
+            border-radius: 20px;
+            padding: 0.85rem 0.9rem;
+            color: #52677c;
+            font-size: 0.84rem;
+            line-height: 1.5;
         }
 
         @media (max-width: 980px) {
@@ -1851,7 +1967,7 @@ def _render_fact_check_card(state: dict[str, Any]) -> None:
         st.caption("未被证据支持的断言：" + "、".join(_zh_text(claim) for claim in fact_check.unsupported_claims))
 
 
-def _render_dashboard(runner: TicketFlowRunner, tickets: list[TicketRecord]) -> None:
+def _render_dashboard(runner: TicketFlowRunner, tickets: list[TicketRecord], agent_ticket: TicketRecord | None = None) -> None:
     enterprise_count = sum(1 for ticket in tickets if ticket.customer_tier == "enterprise")
     refund_count = sum(1 for ticket in tickets if ticket.expected_category == "billing_refund")
     risk_count = _risk_candidate_count(runner, tickets)
@@ -1870,6 +1986,8 @@ def _render_dashboard(runner: TicketFlowRunner, tickets: list[TicketRecord]) -> 
     )
 
     _render_system_overview(runner)
+    if agent_ticket is not None:
+        _render_agent_workspace(agent_ticket)
     _render_benchmark_overview(_project_root())
 
     metric_cols = st.columns(4)
@@ -2083,22 +2201,34 @@ def _append_agent_message(project_root: Path, message: str) -> None:
 
 def _render_agent_message(message: dict[str, Any], index: int) -> None:
     role = "assistant" if message.get("role") == "assistant" else "user"
-    with st.chat_message(role):
-        st.markdown(_zh_text(message.get("content", "")))
-        if role == "assistant":
-            intent = message.get("intent")
-            actions = message.get("actions") or []
-            meta_parts = []
-            if intent:
-                meta_parts.append(f"意图：{_safe_label(AGENT_INTENT_LABELS, intent, _zh_text(intent))}")
-            if actions:
-                meta_parts.append(f"动作：{len(actions)} 个")
-            if meta_parts:
-                st.caption(" · ".join(meta_parts))
-            data = message.get("data") or {}
-            if data:
-                with st.expander("查看结构化结果", expanded=False):
-                    st.json(_display_payload(data))
+    role_label = "你" if role == "user" else "TicketFlow Agent"
+    content = html.escape(_zh_text(message.get("content", ""))).replace("\n", "<br>")
+    meta_parts = []
+    if role == "assistant":
+        intent = message.get("intent")
+        actions = message.get("actions") or []
+        if intent:
+            meta_parts.append(f"意图：{_safe_label(AGENT_INTENT_LABELS, intent, _zh_text(intent))}")
+        if actions:
+            meta_parts.append(f"可执行动作：{len(actions)} 个")
+    meta_html = f'<div class="tf-chat-meta">{html.escape(" · ".join(meta_parts))}</div>' if meta_parts else ""
+    st.markdown(
+        f"""
+        <div class="tf-chat-row tf-chat-row-{role}">
+            <div class="tf-chat-bubble tf-chat-bubble-{role}">
+                <div class="tf-chat-role">{role_label}</div>
+                <div>{content}</div>
+                {meta_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if role == "assistant":
+        data = message.get("data") or {}
+        if data:
+            with st.expander(f"查看第 {index + 1} 条结构化结果", expanded=False):
+                st.json(_display_payload(data))
 
 
 def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
@@ -2124,20 +2254,35 @@ def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
             }
         ]
 
+    latest_assistant = next(
+        (
+            item
+            for item in reversed(st.session_state.agent_chat_history)
+            if item.get("role") == "assistant" and item.get("intent") != "welcome"
+        ),
+        None,
+    )
+    latest_text = (
+        _zh_text(latest_assistant.get("content", ""))
+        if latest_assistant is not None
+        else "还没有新的 Agent 回复。你可以先点“查状态”或直接输入问题。"
+    )
+
     st.markdown(
-        """
-        <div class="tf-agent-shell">
-            <div class="tf-agent-title">工单 Agent Copilot</div>
-            <div class="tf-agent-subtitle">
-                可对话操作入口：查询工单、创建工单、启动流程、解释证据链、沉淀知识候选。
-                写入类动作仍会经过审批、Outbox 和 Skill 权限治理。
+        f"""
+        <div class="tf-agent-console">
+            <div class="tf-agent-console-title">对话式工单 Agent 控制台</div>
+            <div class="tf-agent-console-subtitle">
+                这里是人和 Agent 的主交互入口。你可以直接问工单状态、让它解释证据链、启动处理流程，
+                或用自然语言新建工单；涉及写入和外部副作用的动作仍会进入审批、Outbox 和权限治理。
             </div>
-            <div class="tf-agent-hint">当前上下文已绑定选中工单，可直接点击快捷指令。</div>
+            <div class="tf-agent-latest"><strong>最新 Agent 回复：</strong>{html.escape(latest_text)}</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    chat_col, action_col = st.columns([1.45, 0.85], gap="large")
     quick_actions = [
         ("查状态", f"查询 {selected_ticket.ticket_id} 的状态"),
         ("解释证据链", f"解释 {selected_ticket.ticket_id} 的证据链"),
@@ -2146,27 +2291,44 @@ def _render_agent_workspace(selected_ticket: TicketRecord) -> None:
         ("Outbox", "查看 outbox 投递状态"),
         ("沉淀知识", f"将 {selected_ticket.ticket_id} 的处理经验沉淀为知识候选"),
     ]
-    button_cols = st.columns(3)
-    for idx, (label, prompt) in enumerate(quick_actions):
-        if button_cols[idx % 3].button(label, key=f"agent_quick_{idx}_{selected_ticket.ticket_id}", use_container_width=True):
-            _append_agent_message(project_root, prompt)
-            st.rerun()
+    with chat_col:
+        st.markdown('<div class="tf-agent-section-title">对话记录</div>', unsafe_allow_html=True)
+        with st.container(border=True):
+            for index, message in enumerate(st.session_state.agent_chat_history[-8:]):
+                _render_agent_message(message, index)
 
-    for index, message in enumerate(st.session_state.agent_chat_history[-8:]):
-        _render_agent_message(message, index)
+        with st.form("agent_chat_form", clear_on_submit=True):
+            prompt = st.text_area(
+                "输入给工单 Agent",
+                placeholder=(
+                    f"例如：解释 {selected_ticket.ticket_id} 为什么这样处理，或者："
+                    "新建工单：标题：企业客户无法登录；正文：多次重置密码仍失败；客户等级：企业客户；产品：运维控制台"
+                ),
+                height=92,
+            )
+            form_cols = st.columns([1.1, 1.0])
+            submitted = form_cols[0].form_submit_button("发送给 Agent", type="primary", use_container_width=True)
+            clear_history = form_cols[1].form_submit_button("清空对话", use_container_width=True)
 
-    with st.form("agent_chat_form", clear_on_submit=True):
-        prompt = st.text_area(
-            "输入给工单 Agent",
-            placeholder=(
-                f"例如：解释 {selected_ticket.ticket_id} 为什么这样处理，或者："
-                "新建工单：标题：企业客户无法登录；正文：多次重置密码仍失败；客户等级：企业客户；产品：运维控制台"
-            ),
-            height=86,
+    with action_col:
+        st.markdown('<div class="tf-agent-section-title">当前工单上下文</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="tf-agent-context">
+                <strong>{html.escape(selected_ticket.ticket_id)}</strong><br>
+                {html.escape(_zh_text(selected_ticket.title))}<br><br>
+                产品：{html.escape(_zh_text(selected_ticket.product))}<br>
+                客户等级：{html.escape(_label(TIER_LABELS, selected_ticket.customer_tier))}<br>
+                当前状态：{html.escape(_label(STATUS_LABELS, selected_ticket.status))}
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        form_cols = st.columns([1.1, 1.0])
-        submitted = form_cols[0].form_submit_button("发送给 Agent", type="primary", use_container_width=True)
-        clear_history = form_cols[1].form_submit_button("清空对话", use_container_width=True)
+        st.markdown('<div class="tf-agent-section-title">快捷指令</div>', unsafe_allow_html=True)
+        for idx, (label, prompt) in enumerate(quick_actions):
+            if st.button(label, key=f"agent_quick_{idx}_{selected_ticket.ticket_id}", use_container_width=True):
+                _append_agent_message(project_root, prompt)
+                st.rerun()
 
     if clear_history:
         st.session_state.pop("agent_chat_history", None)
@@ -2267,7 +2429,19 @@ def main() -> None:
         st.session_state.pop("selected_ticket_id", None)
         st.rerun()
 
-    _render_dashboard(runner, all_tickets)
+    agent_context_ticket = None
+    remembered_ticket_id = st.session_state.get("selected_ticket_id")
+    if remembered_ticket_id:
+        agent_context_ticket = next((ticket for ticket in all_tickets if ticket.ticket_id == remembered_ticket_id), None)
+        if agent_context_ticket is None:
+            try:
+                agent_context_ticket = runner.get_ticket(remembered_ticket_id)
+            except Exception:
+                agent_context_ticket = None
+    if agent_context_ticket is None and all_tickets:
+        agent_context_ticket = all_tickets[0]
+
+    _render_dashboard(runner, all_tickets, agent_context_ticket)
 
     with st.sidebar.expander("快捷定位工单", expanded=False):
         for label, config in SCENARIO_CONFIG.items():
@@ -2328,8 +2502,6 @@ def main() -> None:
         st.session_state.pop("workflow_error", None)
     st.session_state.selected_ticket_id = selected_ticket_id
     selected_ticket = ticket_map[selected_ticket_id]
-
-    _render_agent_workspace(selected_ticket)
 
     action_cols = st.columns([1.2, 1.0, 4.0])
     if action_cols[0].button("运行工作流", type="primary", use_container_width=True):
