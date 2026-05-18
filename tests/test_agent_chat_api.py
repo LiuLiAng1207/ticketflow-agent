@@ -153,5 +153,35 @@ def test_agent_chat_can_batch_process_low_risk_tickets_in_chinese(ticketflow_pro
     assert payload["data"]["skill_run"]["skill_id"] == "ticketflow-batch-ops"
     assert payload["data"]["skill_run"]["status"] == "succeeded"
     assert payload["data"]["skill_run"]["result"]["requested_count"] == 10
+    assert payload["data"]["skill_run"]["result"]["count"] == 10
     assert "批量" in payload["reply"]
     assert any(event["event_type"] == "tool_call" for event in payload["events"])
+
+
+def test_agent_chat_can_explain_last_batch_task_results(ticketflow_project):
+    client = next(_client(ticketflow_project))
+    client.get("/readyz")
+
+    first = client.post("/api/v1/agent/chat", json={"message": "帮我批量处理10张工单"}).json()
+    task_ids = [task["task_id"] for task in first["data"]["skill_run"]["result"]["tasks"]]
+
+    response = client.post(
+        "/api/v1/agent/chat",
+        json={
+            "message": "你处理了哪10条工单，处理结果分别是什么",
+            "client_context": {
+                "last_batch_task_ids": task_ids,
+                "last_batch_requested_count": 10,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["intent"] == "batch_status"
+    assert payload["model_source"] == "deterministic"
+    assert payload["data"]["count"] == 10
+    assert payload["data"]["source"] == "client_context"
+    assert all(task["ticket_id"] for task in payload["data"]["tasks"])
+    assert "上一轮" in payload["reply"]
+    assert "DeepSeek" not in payload["reply"]

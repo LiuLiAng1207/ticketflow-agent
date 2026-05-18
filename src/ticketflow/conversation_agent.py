@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +22,7 @@ class AgentChatContext:
     runner_overrides: dict[str, str] | None = None
     knowledge_graph_store: Any | None = None
     llm_client: Any | None = None
+    client_context: dict[str, Any] = field(default_factory=dict)
 
 
 def _extract_ticket_id(message: str) -> str | None:
@@ -134,7 +135,14 @@ def _response(
     requires_confirmation: bool = False,
 ) -> dict[str, Any]:
     if events is None:
-        events = [_event("intent_detected", "识别用户意图", summary=f"命中意图：{intent}", payload={"intent": intent})]
+        events = [
+            _event(
+                "intent_detected",
+                "识别用户意图",
+                summary=f"命中意图：{intent}",
+                payload={"intent": intent},
+            )
+        ]
     return {
         "intent": intent,
         "reply": reply,
@@ -172,12 +180,119 @@ def _ops_summary(repository: RepositoryProtocol) -> dict[str, Any]:
     }
 
 
+def _status_label(status: str | None) -> str:
+    labels = {
+        "queued": "已排队",
+        "running": "执行中",
+        "succeeded": "已完成",
+        "failed": "失败",
+        "cancelled": "已取消",
+        "waiting_approval": "等待审批",
+        "open": "开放",
+    }
+    return labels.get(status or "", status or "未知")
+
+
+def _task_rows(context: AgentChatContext, task_ids: list[str], fallback_limit: int) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for task_id in task_ids:
+        task = context.repository.get_workflow_task(str(task_id))
+        if not task or str(task["task_id"]) in seen:
+            continue
+        seen.add(str(task["task_id"]))
+        rows.append(_task_row(context, task))
+    if rows:
+        return rows[:fallback_limit]
+    for task in context.repository.list_workflow_tasks(limit=fallback_limit):
+        rows.append(_task_row(context, task))
+    return rows[:fallback_limit]
+
+
+def _task_row(context: AgentChatContext, task: dict[str, Any]) -> dict[str, Any]:
+    ticket_payload: dict[str, Any] | None = None
+    try:
+        ticket_payload = _ticket_summary(context.repository.get_ticket(str(task["ticket_id"])))
+    except Exception:  # noqa: BLE001 - task history may reference deleted demo tickets.
+        ticket_payload = None
+    return {
+        "task_id": task.get("task_id"),
+        "short_task_id": str(task.get("task_id", ""))[:13],
+        "ticket_id": task.get("ticket_id"),
+        "ticket_title": ticket_payload.get("title") if ticket_payload else "",
+        "ticket_category": ticket_payload.get("expected_category") if ticket_payload else "",
+        "customer_tier": ticket_payload.get("customer_tier") if ticket_payload else "",
+        "status": task.get("status"),
+        "status_label": _status_label(str(task.get("status") or "")),
+        "mode": task.get("mode"),
+        "error_message": task.get("error_message"),
+        "result": task.get("result"),
+        "created_at": task.get("created_at"),
+        "updated_at": task.get("updated_at"),
+    }
+
+
+def _looks_like_batch_status_question(message: str) -> bool:
+    return _contains_any(message, ("哪10", "哪十", "哪几", "哪些", "处理结果", "结果分别", "刚才", "上一次")) and _contains_any(
+        message,
+        ("工单", "任务", "处理"),
+    )
+
+
+def _batch_status_response(context: AgentChatContext, message: str) -> dict[str, Any]:
+    requested_count = _extract_count(message, default=int(context.client_context.get("last_batch_requested_count") or 10))
+    task_ids = [str(item) for item in context.client_context.get("last_batch_task_ids", []) if item]
+    rows = _task_rows(context, task_ids, fallback_limit=requested_count)
+    if not rows:
+        return _response(
+            intent="batch_status",
+            reply="我没有找到最近的批量处理任务。你可以先说“帮我批量处理10张工单”，或在任务队列里选择具体任务查看。",
+            data={"tasks": [], "count": 0},
+            actions=[{"type": "list_tasks", "method": "GET", "path": "/api/v1/tasks"}],
+            events=[
+                _event("intent_detected", "识别批量结果追问", payload={"requested_count": requested_count}),
+                _event("data_read", "读取任务队列", status="failed", summary="没有找到可关联的批量任务。"),
+            ],
+        )
+
+    completed = sum(1 for row in rows if row["status"] == "succeeded")
+    failed = sum(1 for row in rows if row["status"] == "failed")
+    waiting = sum(1 for row in rows if row["status"] in {"queued", "running", "waiting_approval"})
+    lines = [
+        f"{index}. {row['ticket_id']}：{row['status_label']}，任务号 {row['short_task_id']}，{row.get('ticket_title') or '无标题'}"
+        for index, row in enumerate(rows, start=1)
+    ]
+    reply = (
+        f"上一轮可关联到 {len(rows)} 条批量处理任务。这里的“处理”指已经提交到受治理的工作流队列，"
+        f"不是在聊天里绕过审批直接执行。当前：已完成 {completed} 条、执行中/排队 {waiting} 条、失败 {failed} 条。\n\n"
+        + "\n".join(lines)
+    )
+    return _response(
+        intent="batch_status",
+        reply=reply,
+        data={
+            "tasks": rows,
+            "count": len(rows),
+            "completed_count": completed,
+            "waiting_count": waiting,
+            "failed_count": failed,
+            "source": "client_context" if task_ids else "recent_workflow_tasks",
+        },
+        actions=[{"type": "list_tasks", "method": "GET", "path": "/api/v1/tasks"}],
+        events=[
+            _event("intent_detected", "识别批量结果追问", payload={"requested_count": requested_count}),
+            _event("data_read", "读取工作流任务结果", payload={"count": len(rows), "task_ids": [row["task_id"] for row in rows]}),
+        ],
+    )
+
+
 def _identity_response(context: AgentChatContext) -> dict[str, Any]:
     model_status = "已接入，可用于只读解释和自然语言组织" if context.llm_client is not None else "未配置，当前只使用确定性治理能力"
     reply = (
         "我是 TicketFlow 工单协同 Agent。我的职责不是自由聊天，而是帮你查询工单、创建工单、启动处理流程、"
         "解释证据链、查看审批队列、查看 Outbox 投递状态，并把有价值的处理经验沉淀为知识候选。"
-        f"当前 DeepSeek 状态：{model_status}。涉及退款、审批、邮件等写操作时，我不会直接执行，必须继续走审批、Outbox、Skill Runtime 和审计链路。"
+        f"当前 DeepSeek 状态：{model_status}。涉及退款、审批、邮件等写操作时，我不会直接越权执行，"
+        "必须继续走证据充分性、审批、Outbox、Skill Runtime 和审计链路。"
     )
     return _response(
         intent="identity",
@@ -212,7 +327,7 @@ def _ops_summary_response(context: AgentChatContext) -> dict[str, Any]:
         ],
         events=[
             _event("intent_detected", "识别用户意图", summary="用户在询问待处理工单数量。", payload={"intent": "ops_summary"}),
-            _event("data_read", "读取运营统计", summary="从工单仓库聚合开放工单、企业客户、风险关注和退款相关数量。", payload=summary),
+            _event("data_read", "读取运营统计", summary="聚合开放工单、企业客户、风险关注和退款相关数量。", payload=summary),
         ],
     )
 
@@ -232,10 +347,12 @@ def _llm_freeform_response(message: str, context: AgentChatContext) -> dict[str,
         {
             "user_message": message,
             "ops_summary": summary,
+            "client_context": context.client_context,
             "available_capabilities": [
                 "查询工单",
                 "创建工单",
                 "启动工作流",
+                "批量低风险工单处理",
                 "查看审批",
                 "查看 Outbox",
                 "解释知识图谱证据链",
@@ -287,6 +404,9 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
 
     if _contains_any(normalized, ("待处理工单", "工单数量", "开放工单", "统计工单", "运营概览", "当前有多少")):
         return _ops_summary_response(context)
+
+    if _looks_like_batch_status_question(normalized):
+        return _batch_status_response(context, normalized)
 
     if ticket_id and (
         "skill" in lowered
@@ -345,7 +465,7 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
             reply=(
                 f"已通过 Skill Runtime 为 {run_result.get('count', 0)} 条低风险工单创建批量处理任务；"
                 f"本次请求目标为 {run_result.get('requested_count', requested_count)} 条。"
-                f"高风险或证据不足的工单会跳过，仍然保留证据充分性、审批和 Outbox 治理链。"
+                "高风险或证据不足的工单会跳过，仍然保留证据充分性、审批和 Outbox 治理链。"
             ),
             data={"skill_run": run_payload},
             actions=[{"type": "run_skill", "skill_id": "ticketflow-batch-ops"}],
@@ -400,11 +520,11 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
         )
 
     if _contains_any(normalized, ("知识", "沉淀", "候选", "提交", "入库")) and _contains_any(normalized, ("知识", "kb", "候选")):
-        ticket_id = _extract_ticket_id(normalized) or "TCK-KB-CHAT"
+        candidate_ticket_id = _extract_ticket_id(normalized) or "TCK-KB-CHAT"
         event = context.repository.create_outbox_event(
-            ticket_id=ticket_id,
+            ticket_id=candidate_ticket_id,
             operation_type="kb_candidate_email",
-            business_key=f"kb_candidate_chat:{ticket_id}:{abs(hash(normalized))}",
+            business_key=f"kb_candidate_chat:{candidate_ticket_id}:{abs(hash(normalized))}",
             payload={"message": normalized, "source": "agent_chat"},
         )
         return _response(
@@ -414,7 +534,7 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
             actions=[{"type": "create_outbox", "event_id": event["event_id"]}],
             events=[
                 _event("intent_detected", "识别知识沉淀意图"),
-                _event("tool_call", "写入 Outbox", summary="知识候选不会直接发送，先进入 Outbox。"),
+                _event("tool_call", "写入 Outbox", summary="知识候选不会直接发送，先进 Outbox。"),
             ],
         )
 
@@ -520,18 +640,16 @@ def handle_agent_chat(message: str, context: AgentChatContext) -> dict[str, Any]
     if llm_result is not None:
         return llm_result
 
-    tickets = context.repository.list_open_tickets(limit=5)
     return _response(
         intent="help",
-        reply="我可以帮你查询工单、创建工单、启动处理流程、查看审批队列、查看 Outbox 投递状态，或提交知识候选。请带上工单编号会更准确。",
-        data={"sample_tickets": [_ticket_summary(ticket) for ticket in tickets]},
+        reply=(
+            "我可以帮你查询工单、创建工单、启动处理流程、批量处理低风险工单、查看审批队列、"
+            "查看 Outbox 投递状态，或提交知识候选。请带上工单编号会更准确。"
+        ),
         actions=[
             {"type": "list_tickets", "method": "GET", "path": "/api/v1/tickets"},
             {"type": "list_approvals", "method": "GET", "path": "/api/v1/approvals"},
             {"type": "list_outbox", "method": "GET", "path": "/api/v1/outbox"},
         ],
         model_source="fallback",
-        events=[
-            _event("intent_detected", "未命中具体业务意图", status="fallback", summary="返回能力说明和示例工单。"),
-        ],
     )

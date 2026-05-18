@@ -6,19 +6,23 @@ const API_BASE = (import.meta.env.VITE_TICKETFLOW_API_BASE || "http://127.0.0.1:
 
 const statusLabels = {
   open: "开放",
-  waiting_on_customer: "等待客户补充",
-  pending_human: "待人工处理",
-  pending_finance: "待财务审批",
-  resolved: "已解决",
+  queued: "已排队",
+  running: "执行中",
+  succeeded: "已完成",
+  failed: "失败",
+  cancelled: "已取消",
+  waiting_approval: "等待审批",
+  pending: "待处理",
 };
 
 const intentLabels = {
   identity: "身份说明",
   ops_summary: "运营统计",
   query_ticket: "查询工单",
-  run_ticket: "启动工作流",
+  run_ticket: "启动流程",
+  batch_status: "批量结果",
   list_approvals: "审批队列",
-  list_outbox: "Outbox 状态",
+  list_outbox: "Outbox",
   explain_ticket_graph: "证据链解释",
   submit_kb_candidate: "知识沉淀",
   create_ticket: "创建工单",
@@ -38,6 +42,7 @@ const modelSourceLabels = {
 
 const actionLabels = {
   run_skill: "调用 Skill",
+  list_tasks: "查看任务",
   list_tickets: "查看工单",
   list_approvals: "查看审批",
   list_outbox: "查看 Outbox",
@@ -53,25 +58,24 @@ async function api(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
     ...options,
   });
-  const text = await response.text();
-  const payload = text ? JSON.parse(text) : {};
   if (!response.ok) {
-    throw new Error(payload?.detail?.message || payload?.detail || payload?.error || response.statusText);
+    let message = `${response.status} ${response.statusText}`;
+    try {
+      const payload = await response.json();
+      message = payload.detail || payload.message || message;
+    } catch {
+      // Keep the HTTP status message.
+    }
+    throw new Error(message);
   }
-  return payload;
+  return response.json();
 }
 
-function Pill({ children, tone = "neutral" }) {
-  return <span className={`pill pill-${tone}`}>{children}</span>;
-}
-
-function EmptyState({ title, text }) {
-  return (
-    <div className="empty-state">
-      <strong>{title}</strong>
-      <span>{text}</span>
-    </div>
-  );
+function shortId(value) {
+  if (!value) return "无编号";
+  const text = String(value);
+  if (text.length <= 18) return text;
+  return `${text.slice(0, 10)}…${text.slice(-5)}`;
 }
 
 function App() {
@@ -90,13 +94,13 @@ function App() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content:
-        "我是 TicketFlow 工单协同 Agent。你可以问我“你是谁”、统计待处理工单、查询或处理某个工单，也可以查看审批、Outbox、Claw 评测和证据链。",
+      content: "我是 TicketFlow Agent。你可以让我查询工单、批量处理低风险工单、解释证据链、查看审批和 Outbox。",
       intent: "identity",
       model_source: "deterministic",
-      events: [{ event_type: "welcome", title: "进入工作台", status: "completed", summary: "对话线程已就绪。" }],
+      events: [{ event_type: "boot", title: "Agent 已就绪", status: "completed", summary: "前端已连接 TicketFlow API。" }],
     },
   ]);
+  const [agentMemory, setAgentMemory] = useState({ lastBatchTaskIds: [], lastBatchRequestedCount: 0 });
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -127,7 +131,7 @@ function App() {
         api("/readyz"),
         api("/api/v1/tickets?limit=80"),
         api("/api/v1/ops/summary"),
-        api("/api/v1/tasks?limit=20").catch(() => ({ tasks: [] })),
+        api("/api/v1/tasks?limit=30").catch(() => ({ tasks: [] })),
         api("/api/v1/approvals?limit=20").catch(() => ({ approvals: [] })),
         api("/api/v1/outbox?limit=20").catch(() => ({ events: [] })),
         api("/api/v1/claw/tasks?limit=20").catch(() => ({ tasks: [] })),
@@ -196,23 +200,44 @@ function App() {
     try {
       const result = await api("/api/v1/agent/chat", {
         method: "POST",
-        body: JSON.stringify({ message: text, actor: "web-console" }),
+        body: JSON.stringify({
+          message: text,
+          actor: "web-console",
+          client_context: {
+            selected_ticket_id: selectedTicket?.ticket_id,
+            last_batch_task_ids: agentMemory.lastBatchTaskIds,
+            last_batch_requested_count: agentMemory.lastBatchRequestedCount,
+          },
+        }),
       });
-      setMessages((items) => [
-        ...items,
-        {
-          role: "assistant",
-          content: result.reply,
-          intent: result.intent,
-          model_source: result.model_source,
-          data: result.data,
-          actions: result.actions || [],
-          events: result.events || [],
-        },
-      ]);
-      loadAll();
+      const assistantMessage = {
+        role: "assistant",
+        content: result.reply,
+        intent: result.intent,
+        model_source: result.model_source,
+        data: result.data,
+        actions: result.actions || [],
+        events: result.events || [],
+      };
+      setMessages((items) => [...items, assistantMessage]);
+
+      const batchResult = result.data?.skill_run?.result;
+      if (result.intent === "run_skill" && Array.isArray(batchResult?.tasks)) {
+        setAgentMemory({
+          lastBatchTaskIds: batchResult.tasks.map((task) => task.task_id).filter(Boolean),
+          lastBatchRequestedCount: batchResult.requested_count || batchResult.count || batchResult.tasks.length,
+        });
+      }
+      if (result.intent === "batch_status" && Array.isArray(result.data?.tasks)) {
+        setAgentMemory((current) => ({
+          ...current,
+          lastBatchTaskIds: result.data.tasks.map((task) => task.task_id).filter(Boolean),
+        }));
+      }
+
+      await loadAll();
       if (selectedTicket?.ticket_id) {
-        loadTicketContext(selectedTicket.ticket_id);
+        await loadTicketContext(selectedTicket.ticket_id);
       }
     } catch (error) {
       setMessages((items) => [
@@ -230,32 +255,6 @@ function App() {
     }
   }
 
-  async function runClawTask(taskId) {
-    setBusy(true);
-    try {
-      const result = await api(`/api/v1/claw/tasks/${taskId}/run?sync=true&pass_k=1`, {
-        method: "POST",
-        body: JSON.stringify({ actor: "web-console", config: {} }),
-      });
-      setMessages((items) => [
-        ...items,
-        {
-          role: "assistant",
-          content: `Claw 任务 ${taskId} 已完成，平均分 ${Number(result.run?.summary?.average_score || result.result?.average_score || 0).toFixed(3)}。`,
-          intent: "claw_run",
-          model_source: "deterministic",
-          data: result,
-          events: [{ event_type: "claw_run", title: "运行 Claw 任务", status: "completed", summary: taskId }],
-        },
-      ]);
-      loadAll();
-    } catch (error) {
-      setLastError(String(error.message || error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function reloadClawTasks() {
     setBusy(true);
     try {
@@ -268,82 +267,96 @@ function App() {
     }
   }
 
+  async function runClawTask(taskId) {
+    setBusy(true);
+    try {
+      const result = await api(`/api/v1/claw/tasks/${taskId}/run?sync=true&pass_k=1`, { method: "POST" });
+      setMessages((items) => [
+        ...items,
+        {
+          role: "assistant",
+          content: `Claw 任务 ${taskId} 已完成，平均分 ${Number(result.run?.summary?.average_score || result.result?.average_score || 0).toFixed(3)}。`,
+          intent: "claw_run",
+          model_source: "deterministic",
+          data: result,
+          events: [{ event_type: "claw_run", title: "运行 Claw 评测", status: "completed", summary: taskId }],
+        },
+      ]);
+      await loadAll();
+    } catch (error) {
+      setLastError(String(error.message || error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const latest = latestAssistant(messages);
   const quickPrompts = [
     "你是谁",
     "帮我分析待处理工单的数量",
     "帮我批量处理10张工单",
+    "你处理了哪10条工单，处理结果分别是什么",
     selectedTicket ? `查询 ${selectedTicket.ticket_id} 的状态` : "",
     selectedTicket ? `解释 ${selectedTicket.ticket_id} 的证据链` : "",
     "查看待审批",
-    "查看 Outbox 投递状态",
   ].filter(Boolean);
 
   return (
-    <main className="shell">
+    <div className="shell">
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">TF</span>
           <div>
-            <h1>TicketFlow</h1>
-            <p>Agent 工单指挥台</p>
+            <p>TicketFlow</p>
+            <strong>Agent Ops Console</strong>
           </div>
         </div>
 
-        <section className="status-block">
-          <div className="status-row">
-            <span>API 服务</span>
-            <Pill tone={health.api === "可用" ? "green" : "red"}>{health.api}</Pill>
-          </div>
-          <div className="status-row">
-            <span>模型后端</span>
-            <Pill tone={health.ready?.llm?.enabled ? "blue" : "amber"}>
-              {health.ready?.llm?.enabled ? health.ready?.llm?.model || "已配置" : "未配置"}
-            </Pill>
-          </div>
-          <div className="status-row">
-            <span>运行模式</span>
-            <Pill>{health.ready?.database?.backend || "检测中"}</Pill>
-          </div>
+        <section className="status-strip">
+          <StatusDot label="API 服务" value={health.api} ok={health.api === "可用"} />
+          <StatusDot label="模型模式" value={health.ready?.model_backend || "读取中"} />
+          <StatusDot label="KG 后端" value={health.ready?.kg_backend || "未知"} />
         </section>
 
-        <section className="summary-grid">
-          <Metric label="开放工单" value={summary?.open_tickets ?? "-"} />
-          <Metric label="企业客户" value={summary?.enterprise_tickets ?? "-"} />
-          <Metric label="风险关注" value={summary?.risk_watch_tickets ?? "-"} />
-          <Metric label="退款相关" value={summary?.refund_related_tickets ?? "-"} />
-        </section>
-
-        <div className="search-box">
-          <span>工单搜索</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="编号、标题、产品、类别" />
+        <div className="metric-grid">
+          <Metric label="开放工单" value={summary?.open_tickets ?? "—"} />
+          <Metric label="企业客户" value={summary?.enterprise_tickets ?? "—"} />
+          <Metric label="风险关注" value={summary?.risk_watch_tickets ?? "—"} />
+          <Metric label="退款相关" value={summary?.refund_related_tickets ?? "—"} />
         </div>
 
-        <section className="ticket-list">
+        <div className="section-title">
+          <span>工单队列</span>
+          <button onClick={loadAll}>刷新</button>
+        </div>
+        <input className="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索工单、产品、客户等级" />
+        <div className="ticket-list">
           {filteredTickets.map((ticket) => (
             <button
-              key={ticket.ticket_id}
               className={`ticket-item ${selectedTicket?.ticket_id === ticket.ticket_id ? "active" : ""}`}
+              key={ticket.ticket_id}
               onClick={() => setSelectedTicketId(ticket.ticket_id)}
             >
               <span>{ticket.ticket_id}</span>
               <strong>{ticket.title}</strong>
               <small>
-                {ticket.product} · {ticket.customer_tier}
+                {ticket.expected_category} · {ticket.customer_tier}
               </small>
             </button>
           ))}
-        </section>
+        </div>
       </aside>
 
-      <section className="conversation">
+      <main className="conversation">
         <header className="workspace-header">
           <div>
-            <p className="eyebrow">Agent 对话</p>
-            <h2>可对话、可追踪、可审批的工单 Agent</h2>
+            <p className="eyebrow">Agent 对话工作台</p>
+            <h1>可对话、可追踪、可审批的工单 Agent</h1>
           </div>
-          <button className="ghost-button" onClick={loadAll}>
-            刷新状态
-          </button>
+          <div className="header-actions">
+            <span>{busy ? "Agent 执行中" : "实时就绪"}</span>
+            <button onClick={loadAll}>同步数据</button>
+          </div>
         </header>
 
         {lastError ? <div className="error-banner">{lastError}</div> : null}
@@ -357,6 +370,7 @@ function App() {
         </div>
 
         <ChatThread messages={messages} />
+        <BatchResultInline message={latest} />
 
         <form
           className="composer"
@@ -365,45 +379,30 @@ function App() {
             sendMessage();
           }}
         >
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="例如：帮我分析待处理工单的数量，或者：处理 TCK-0001"
-            rows={3}
-          />
-          <button type="submit" disabled={busy || !input.trim()}>
-            {busy ? "处理中" : "发送"}
-          </button>
+          <input value={input} onChange={(event) => setInput(event.target.value)} placeholder="例如：帮我批量处理10张工单，然后问：你处理了哪10条？" />
+          <button disabled={busy || !input.trim()}>{busy ? "执行中" : "发送"}</button>
         </form>
-      </section>
+      </main>
 
       <aside className="inspector">
         <section className="panel hero-panel">
-          <p className="eyebrow">选中工单</p>
+          <p className="eyebrow">当前工单</p>
           {selectedTicket ? (
             <>
               <h3>{selectedTicket.ticket_id}</h3>
               <p>{selectedTicket.title}</p>
               <div className="pill-row">
-                <Pill tone="blue">{selectedTicket.expected_category || "未分类"}</Pill>
-                <Pill tone="green">{statusLabels[selectedTicket.status] || selectedTicket.status}</Pill>
-                <Pill>{selectedTicket.customer_tier}</Pill>
-              </div>
-              <div className="detail-line">
-                <span>产品</span>
-                <strong>{selectedTicket.product}</strong>
-              </div>
-              <div className="detail-line">
-                <span>订单</span>
-                <strong>{selectedTicket.linked_order_id || "无"}</strong>
+                <Pill tone="blue">{selectedTicket.expected_category}</Pill>
+                <Pill tone={selectedTicket.customer_tier === "enterprise" ? "amber" : "green"}>{selectedTicket.customer_tier}</Pill>
+                <Pill>{statusLabels[selectedTicket.status] || selectedTicket.status}</Pill>
               </div>
             </>
           ) : (
-            <EmptyState title="暂无工单" text="API 返回后会显示选中的工单详情。" />
+            <EmptyState title="未选择工单" text="从左侧选择一个工单后会显示证据链、治理链和审计轨迹。" />
           )}
         </section>
 
-        <section className="panel context-panel">
+        <section className="panel context-panel pinned">
           <div className="panel-title">
             <span>证据链与治理链</span>
             <Pill tone={inspectorBusy ? "amber" : "green"}>{inspectorBusy ? "加载中" : "已同步"}</Pill>
@@ -415,26 +414,26 @@ function App() {
         <section className="panel context-panel">
           <div className="panel-title">
             <span>最近 Agent 轨迹</span>
-            <Pill tone="blue">{latestAssistant(messages)?.events?.length || 0} 步</Pill>
+            <Pill tone="blue">{latest?.events?.length || 0} 步</Pill>
           </div>
-          <EventTimeline events={latestAssistant(messages)?.events || []} />
+          <EventTimeline events={latest?.events || []} />
         </section>
 
-        <QueuePanel title="任务队列" items={tasks} empty="暂无工作流任务" idKey="task_id" />
-        <QueuePanel title="审批队列" items={approvals} empty="暂无待审批请求" idKey="approval_id" />
-        <QueuePanel title="Outbox 投递" items={outbox} empty="暂无 Outbox 事件" idKey="event_id" />
+        <QueuePanel title="任务队列" items={tasks} empty="暂无工作流任务" type="task" />
+        <QueuePanel title="审批队列" items={approvals} empty="暂无待审批请求" type="approval" />
+        <QueuePanel title="Outbox 投递" items={outbox} empty="暂无 Outbox 事件" type="outbox" />
 
-        <section className="panel">
+        <section className="panel compact">
           <div className="panel-title">
             <span>Claw 评测中心</span>
-            <Pill tone="blue">{leaderboard.length} 条榜单</Pill>
+            <Pill tone="blue">{clawTasks.length}</Pill>
           </div>
           {clawTasks.length ? (
             clawTasks.slice(0, 5).map((task) => (
               <div className="claw-row" key={task.task_id}>
                 <div>
                   <strong>{task.name || task.task_id}</strong>
-                  <span>{task.goal}</span>
+                  <span>{task.goal || "Agent 任务评测"}</span>
                 </div>
                 <button onClick={() => runClawTask(task.task_id)} disabled={busy}>
                   运行
@@ -452,12 +451,12 @@ function App() {
           {leaderboard.slice(0, 4).map((row) => (
             <div className="leaderboard-row" key={`${row.task_id}-${row.latest_run_id}`}>
               <span>{row.task_id}</span>
-              <strong>{Number(row.best_score || 0).toFixed(3)}</strong>
+              <strong>{Number(row.average_score || 0).toFixed(3)}</strong>
             </div>
           ))}
         </section>
       </aside>
-    </main>
+    </div>
   );
 }
 
@@ -474,17 +473,27 @@ function Metric({ label, value }) {
   );
 }
 
+function StatusDot({ label, value, ok = true }) {
+  return (
+    <div className="status-dot">
+      <i className={ok ? "ok" : "bad"} />
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function ChatThread({ messages }) {
-  const endRef = useRef(null);
+  const ref = useRef(null);
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
   return (
-    <section className="chat-thread">
+    <div className="chat-thread" ref={ref}>
       {messages.map((message, index) => (
-        <article key={`${message.role}-${index}`} className={`message ${message.role}`}>
-          <div className="avatar">{message.role === "user" ? "你" : "AI"}</div>
-          <div className="message-body">
+        <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
+          <div className="avatar">{message.role === "assistant" ? "AI" : "你"}</div>
+          <div className="bubble">
             <p>{message.content}</p>
             {message.role === "assistant" ? (
               <div className="message-meta">
@@ -494,7 +503,7 @@ function ChatThread({ messages }) {
                 </Pill>
               </div>
             ) : null}
-            {message.events?.length ? <EventTimeline events={message.events} /> : null}
+            {message.events?.length ? <EventTimeline events={message.events} compact /> : null}
             {message.actions?.length ? (
               <div className="action-strip">
                 {message.actions.map((action, actionIndex) => (
@@ -502,32 +511,53 @@ function ChatThread({ messages }) {
                 ))}
               </div>
             ) : null}
-            {message.data && Object.keys(message.data).length ? (
-              <details>
+            {message.data ? (
+              <details className="json-details">
                 <summary>查看结构化结果</summary>
                 <pre>{JSON.stringify(message.data, null, 2)}</pre>
               </details>
             ) : null}
           </div>
-        </article>
+        </div>
       ))}
-      <div ref={endRef} />
+    </div>
+  );
+}
+
+function BatchResultInline({ message }) {
+  const rows = message?.data?.tasks || message?.data?.skill_run?.result?.tasks || [];
+  if (!rows?.length) return null;
+  return (
+    <section className="batch-strip">
+      <div className="panel-title">
+        <span>批量处理结果</span>
+        <Pill tone="blue">{rows.length} 条</Pill>
+      </div>
+      <div className="batch-grid">
+        {rows.slice(0, 10).map((task, index) => (
+          <div className="batch-card" key={task.task_id || index}>
+            <span>{task.ticket_id}</span>
+            <strong>{statusLabels[task.status] || task.status_label || task.status || "已创建"}</strong>
+            <small>{shortId(task.task_id)}</small>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
 
-function EventTimeline({ events }) {
+function EventTimeline({ events, compact = false }) {
   if (!events?.length) {
     return <EmptyState title="暂无轨迹" text="Agent 执行后会在这里显示意图识别、工具调用、审批和完成状态。" />;
   }
   return (
-    <div className="timeline">
+    <div className={`timeline ${compact ? "compact-timeline" : ""}`}>
       {events.map((event, index) => (
-        <div className={`timeline-event ${event.status || "completed"}`} key={`${event.event_type}-${index}`}>
-          <span />
+        <div className="timeline-row" key={`${event.event_type}-${index}`}>
+          <span className={`timeline-dot ${event.status || "completed"}`} />
           <div>
             <strong>{event.title || event.event_type}</strong>
-            <small>{event.summary}</small>
+            {event.summary ? <p>{event.summary}</p> : null}
           </div>
         </div>
       ))}
@@ -537,44 +567,36 @@ function EventTimeline({ events }) {
 
 function EvidenceGraph({ graph }) {
   if (!graph) {
-    return <EmptyState title="等待图谱加载" text="选择工单后会自动读取知识图谱和证据链。" />;
+    return <EmptyState title="正在读取证据链" text="选择工单后会自动读取图谱、审计和治理事件。" />;
   }
   if (!graph.enabled) {
-    return <EmptyState title="知识图谱未启用" text="当前运行模式不会阻塞工单处理，但无法展示图谱证据链。" />;
+    return <EmptyState title="知识图谱未启用" text="启动 API 时设置 KG_BACKEND=memory 或 neo4j 后即可展示证据链。" />;
   }
   const nodes = graph.nodes || [];
   const edges = graph.edges || [];
-  const evidenceNodes = nodes.filter((node) =>
-    ["Policy", "KBArticle", "HistoryCase", "Order", "AttachmentEvidence"].includes(node.label),
-  );
-  const visibleNodes = evidenceNodes.length ? evidenceNodes : nodes;
+  const evidenceNodes = nodes.filter((node) => ["Policy", "KBArticle", "HistoryCase", "Order", "Customer", "Ticket", "WorkflowTask"].includes(node.label));
   return (
-    <div className="evidence-graph">
+    <div className="graph-box">
       <div className="graph-stats">
-        <Metric label="业务节点" value={graph.node_count || nodes.length || 0} />
-        <Metric label="关系边" value={graph.edge_count || edges.length || 0} />
+        <Metric label="业务节点" value={graph.node_count ?? nodes.length} />
+        <Metric label="关系边" value={graph.edge_count ?? edges.length} />
       </div>
-      {visibleNodes.length ? (
-        <div className="node-list">
-          {visibleNodes.slice(0, 6).map((node) => (
-            <div className="node-row" key={node.id}>
-              <span>{node.label}</span>
-              <strong>{node.id}</strong>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState title="暂无证据节点" text="运行工作流或重建图谱后，会显示 policy、history、order 等证据。" />
-      )}
-      {edges.length ? (
-        <div className="edge-list">
-          {edges.slice(0, 4).map((edge, index) => (
-            <span key={`${edge.source}-${edge.type}-${edge.target}-${index}`}>
-              {edge.source} → {edge.type} → {edge.target}
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <div className="node-list">
+        {evidenceNodes.slice(0, 6).map((node) => (
+          <div className="node-row" key={node.id}>
+            <span>{node.label}</span>
+            <strong>{node.properties?.title || node.properties?.name || node.id}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="subhead">关键关系</p>
+      <div className="edge-list">
+        {edges.slice(0, 6).map((edge, index) => (
+          <span key={`${edge.source}-${edge.target}-${index}`}>
+            {edge.source} → {edge.type} → {edge.target}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -589,16 +611,16 @@ function AuditTimeline({ events }) {
       "reply_fact_checked",
       "reply_rewritten_or_downgraded",
       "execute_action",
+      "ticket_created_from_chat",
     ].includes(event.event_type),
   );
-  const visible = important.length ? important : (events || []).slice(0, 5);
   return (
-    <div className="audit-block">
-      <div className="subhead">审计事件</div>
-      {visible.length ? (
-        visible.slice(0, 6).map((event, index) => (
+    <div className="audit-list">
+      <p className="subhead">审计事件</p>
+      {important.length ? (
+        important.slice(0, 6).map((event, index) => (
           <div className="audit-row" key={`${event.event_type}-${index}`}>
-            <span>{event.event_type || event.step || "event"}</span>
+            <span>{event.event_type}</span>
             <strong>{event.detail || event.actor || "已记录"}</strong>
           </div>
         ))
@@ -609,7 +631,7 @@ function AuditTimeline({ events }) {
   );
 }
 
-function QueuePanel({ title, items, empty, idKey }) {
+function QueuePanel({ title, items, empty, type }) {
   return (
     <section className="panel compact">
       <div className="panel-title">
@@ -617,16 +639,60 @@ function QueuePanel({ title, items, empty, idKey }) {
         <Pill>{items.length}</Pill>
       </div>
       {items.length ? (
-        items.slice(0, 4).map((item) => (
-          <div className="queue-row" key={item[idKey] || item.task_id || item.event_id}>
-            <strong>{item[idKey] || item.ticket_id}</strong>
-            <span>{item.status || item.operation_type || item.tool_name || "running"}</span>
-          </div>
-        ))
+        items.slice(0, 5).map((item) => {
+          const view = queueView(item, type);
+          return (
+            <div className="queue-row" key={view.key}>
+              <div>
+                <strong>{view.title}</strong>
+                <small>{view.subtitle}</small>
+              </div>
+              <span>{view.status}</span>
+            </div>
+          );
+        })
       ) : (
         <EmptyState title={empty} text="队列为空时说明当前没有阻塞项。" />
       )}
     </section>
+  );
+}
+
+function queueView(item, type) {
+  if (type === "task") {
+    return {
+      key: item.task_id,
+      title: item.ticket_id || "未知工单",
+      subtitle: `任务 ${shortId(item.task_id)} · ${item.mode || "async"}`,
+      status: statusLabels[item.status] || item.status || "未知",
+    };
+  }
+  if (type === "approval") {
+    return {
+      key: item.approval_id,
+      title: item.ticket_id || item.tool_name || "审批请求",
+      subtitle: `审批 ${shortId(item.approval_id)} · ${item.tool_name || "工具"}`,
+      status: statusLabels[item.status] || item.status || "待审批",
+    };
+  }
+  return {
+    key: item.event_id,
+    title: item.ticket_id || item.operation_type || "Outbox",
+    subtitle: `${item.operation_type || "外部投递"} · ${shortId(item.event_id)}`,
+    status: statusLabels[item.status] || item.status || "未知",
+  };
+}
+
+function Pill({ children, tone = "neutral" }) {
+  return <span className={`pill ${tone}`}>{children}</span>;
+}
+
+function EmptyState({ title, text }) {
+  return (
+    <div className="empty">
+      <strong>{title}</strong>
+      <span>{text}</span>
+    </div>
   );
 }
 

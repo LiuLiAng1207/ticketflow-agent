@@ -56,6 +56,7 @@ class AgentChatPayload(BaseModel):
     message: str
     session_id: str | None = None
     actor: str = "operator"
+    client_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class SkillRunPayload(BaseModel):
@@ -496,6 +497,7 @@ def create_app(
             runner_overrides=request.app.state.runner_overrides,
             knowledge_graph_store=_get_kg_store(request),
             llm_client=_get_agent_llm_client(request),
+            client_context=payload.client_context,
         )
         try:
             result = handle_agent_chat(payload.message, context)
